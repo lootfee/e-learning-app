@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block app_content %}
+{% set side_nav_content = [{'endpoint': url_for('cme_course_content', token=post_test.course.get_id_token(), content_index=0), 'name': 'Back to course', 'icon_class': 'fas fa-angle-double-left'}] %}
+
+{% include 'sidenav.html' %}
+<div class="col-lg-6 col-lg-offset-3 col-md-6 col-md-offset-3 col-sm-12 col-xs-12">
+    <div class="text-center">
+        <h3>{{ post_test.course.title }} Course Post-test Exam Summary</h3>
+        <h3>
+            Score: {{ post_test.score }}/{{ post_test.course.questions|length }}
+             ({{ ((post_test.score/post_test.course.questions|length) * 100)|round|int }}%)
+        </h3>
+        {% if post_test.passed() == True %}
+            <h4>
+                Congratulations! You have passed the exam.
+            </h4>
+            <h4>
+                Your pre-test score was {{ post_test.pre_test_score() }} which gives you a
+                {{ (((post_test.score - post_test.pre_test_score())/post_test.course.questions|length) * 100)|round|int }}%
+                change in knowledge
+            </h4>
+            {% if post_test.course.release_certificate(current_user) %}
+                <p>
+                    <a class="btn btn-primary" href="{{ url_for('create_cme_certificate_pdf', token=post_test.course.get_id_token()) }}" style="padding: 6px 10px">
+                        <i class="fas fa-certificate"></i>
+                        Print Certificate
+                    </a>
+                </p>
+            {% else %}
+                <p>You will receive a notification once your certificate for this course is ready.</p>
+            {% endif %}
+        {% elif post_test.passed() == False %}
+            <h4>
+                You need a grade of 80% to pass this course.
+                <a class="btn btn-primary" href="{{ url_for('cme_take_post_test',
+                course_token=post_test.course.get_id_token(), question_token=post_test.course.questions[0].get_id_token()) }}">
+                    Retake exam
+                </a>
+            </h4>
+        {% endif %}
+    </div>
+</div>
+<div class="col-lg-6 col-lg-offset-3 col-md-6 col-md-offset-3 col-sm-12 col-xs-12">
+    {% for q in post_test.course.questions %}
+    <div class="panel panel-info">
+        <div class="panel-heading">
+            <h3 class="panel-title">{{ q.title }} ?</h3>
+        </div>
+        <div class="panel-body">
+            {% for choice in q.choices %}
+            <div class="radio">
+            <p {% if q.answer().id == choice.id and post_test.has_response(q).selected_choice_id == choice.id %}
+                    style="background-color: #78bdf3"
+                    {#{% elif q.answer().id == choice.id and post_test.has_response(q).selected_choice_id != choice.id %}#}
+                    {% elif q.answer().id != choice.id and post_test.has_response(q).selected_choice_id == choice.id %}
+                    style="background-color: #f5a4a4"
+                    {% endif %} >
+                <label style="width: 100%">
+                    <input class="rd_btn" type="radio" name="question_{{ q.id }}_radios"
+                            {% if post_test.has_response(q).selected_choice_id == choice.id %}
+                            checked
+                            {% endif %}
+                            value="{{ choice.id }}" onclick="return false">
+                    <span>{{ choice.title }}</span>
+                </label>
+            </p>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="panel-footer">
+            <strong>Explanation:</strong> {{ q.answer_explanation }}
+        </div>
+    </div>
+    {% endfor %}
+
+</div>
+{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<style>
+@media (max-width: 1023px) {
+    h3 {
+        font-size: 16px;
+        font-weight: bold;
+    }
+    h4  {
+        font-size: 14px;
+    }
+}
+
+</style>
+{% endblock %}

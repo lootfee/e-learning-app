@@ -1,0 +1,144 @@
+{% extends "cme_admin/admin_base.html" %}
+
+{% block admin_content %}
+<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+    <h3 class="text-center">Manage Courses</h3>
+</div>
+{% for course in courses %}
+{% if current_user.designation_id == 1 or course.is_creator(current_user) %}
+<div class="col-lg-4 col-md-4 col-sm-12 col-xs-12">
+    <div class="panel {% if course.published == True %}panel-info {% elif course.published == False %}panel-warning{% endif %}">
+        <div class="panel-heading">
+            {#<h3 class="panel-title">Panel title</h3>#}
+            <img src="{{ url_for('static', filename='cme/' + course.cover_page)  }}" style="width: 100%; height: 100%;">
+        </div>
+        <div class="panel-body">
+            <div style="width: 80%; display: inline-flex">
+                <strong>
+                    <a href="{{ url_for('cme_add_course_content', token=course.get_id_token()) }}">
+                        <div>{{ course.title }}</div>
+                        <div>Course deadline: {{ course.deadline.strftime('%b %d, %Y') if course.deadline else '' }}</div>
+                        <div>Presented by: {% for p in course.creators %} <div style="margin-left: 10%;"> {{ p.name }}</div>{% endfor %}</div>
+                    </a>
+                </strong>
+            </div>
+            <div style="display: inline-flex;">
+                {% if course.published == False  %}
+                <button title="Edit course details" class="btn btn-primary btn-sm" data-toggle="modal"
+                        data-target="#edit_course_modal" data-course_id="{{ course.id }}"
+                        data-course_title="{{ course.title }}"
+                        data-course_topic="{{ course.topic.id }}"
+                        data-course_presenter1="{{ course.creators[0].id }}"
+                        data-course_presenter2="{{ course.creators[1].id if course.creators[1] else 0 }}"
+                        data-course_presenter3="{{ course.creators[2].id if course.creators[2] else 0 }}"
+                        data-deadline="{% if course.deadline %}{{ course.deadline.strftime('%Y-%m-%dT%H:%M') }}{% endif %}"
+                        {#data-course_cme_points="{{ course.cme_points }}" data-course_cme_serial_no="{{ course.cme_serial_no }}"#}
+                        style="float: right; padding: 2px; margin-right: 2px;">
+                    <i class="fas fa-edit"></i>
+                </button>
+                {% endif %}
+                {% if current_user.designation_id == 1 and course.published == False %}
+                    <button class="btn btn-danger" data-toggle="popover" data-html="true"
+                            data-container="body" data-placement="top"
+                            data-content="<p>Are you sure you want to delete {{ course.title }} course?</p>
+                            <a class='btn btn-danger' href='{{ url_for('cme_delete_course', token=course.get_id_token()) }}'>
+                            <i class='fas fa-trash'></i> Delete Course</a>" style="padding: 2px;">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                {% endif %}
+{#                    {% if current_user.designation == 'Educational Lead' %}#}
+{#                    <button title="Publish Certificates" class="btn btn-primary btn-sm" data-toggle="modal"#}
+{#                            data-target="#release_certificate_modal" data-course_id="{{ course.id }}"#}
+{#                            data-course_title="{{ course.title }}"#}
+                        {#data-course_presentation_date="{{ course.presentation_date.strftime('%Y-%m-%dT%H:%M') }}"#}
+{#                            data-course_cme_points="{{ course.cme_points }}" data-course_cme_serial_no="{{ course.cme_serial_no }}"#}
+{#                            style="float: right; padding: 2px; margin-right: 2px;">#}
+{#                        <i class="fas fa-certificate"></i>#}
+{#                    </button>#}
+{#                    {% endif %}#}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+
+
+<div class="row">
+    <div class="col-lg-2 col-lg-offset-10 col-md-2 col-md-offset-10 col-sm-3 col-sm-offset-9 col-xs-3 col-xs-offset-9 create_course_cont">
+        <a class="btn btn-primary btn-lg" href="{{ url_for('cme_add_course') }}" {#data-toggle="modal" data-target="#add_course_modal"#} title="Add course">
+            <i class="fas fa-plus-circle"></i>
+        </a>
+    </div>
+</div>
+
+<div class="modal fade" id="edit_course_modal" tabindex="-1" role="dialog" aria-labelledby="edit_course_modal_Label">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="edit_course_modal_Label">Edit Course Details</h4>
+            </div>
+            <div class="modal-body">
+            {{ wtf.quick_form(form) }}
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{#<div class="modal fade" id="release_certificate_modal" tabindex="-1" role="dialog" aria-labelledby="release_certificate_modal_Label">#}
+{#    <div class="modal-dialog" role="document">#}
+{#        <div class="modal-content">#}
+{#            <div class="modal-header">#}
+{#                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>#}
+{#                <h4 class="modal-title" id="release_certificate_modal_Label">Publish <span id="cert_title"></span> Course Certificates</h4>#}
+{#            </div>#}
+{#            <div class="modal-body">#}
+{#            {{ wtf.quick_form(cert_form) }}#}
+{#            </div>#}
+{#        </div>#}
+{#    </div>#}
+{#</div>#}
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+$(document).ready(function () {
+    $('#edit_course_modal').on('show.bs.modal', function (event) {
+        var button = $(event.relatedTarget)
+        var course_id = button.data('course_id')
+        var course_title = button.data('course_title')
+        var course_topic = button.data('course_topic')
+        var course_presenter1 = button.data('course_presenter1')
+        var course_presenter2 = button.data('course_presenter2')
+        var course_presenter3 = button.data('course_presenter3')
+        var deadline = button.data('deadline')
+        {#var course_cme_points = button.data('course_cme_points')#}
+        var modal = $(this)
+        modal.find('form #course_id').val(course_id)
+        modal.find('form #title').val(course_title)
+        modal.find('form #topic_id').val(course_topic)
+        modal.find('form #presented_by1').val(course_presenter1)
+        modal.find('form #presented_by2').val(course_presenter2)
+        modal.find('form #presented_by3').val(course_presenter3)
+        modal.find('form #deadline').val(deadline)
+        {#modal.find('form #cme_points').val(course_cme_points)#}
+    })
+
+    $('#release_certificate_modal').on('show.bs.modal', function (event) {
+        var button = $(event.relatedTarget)
+        var course_id = button.data('course_id')
+        var course_title = button.data('course_title')
+        var course_cme_points = button.data('course_cme_points')
+        var course_cme_serial_no = button.data('course_cme_serial_no')
+        var modal = $(this)
+        modal.find('form #cert_course_id').val(course_id)
+        modal.find('#cert_title').text(course_title)
+        modal.find('form #cme_points').val(course_cme_points)
+        modal.find('form #cme_serial_no').val(course_cme_serial_no)
+    })
+})
+</script>
+{% endblock %}

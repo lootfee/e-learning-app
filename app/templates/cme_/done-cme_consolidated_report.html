@@ -1,0 +1,58 @@
+{% extends "cme_/cme_dashboards_base.html" %}
+
+{% block dashboard_content %}
+<div class="col-lg-12 col-md-12">
+    <table class="table table-bordered table-hover" style="table-layout: fixed;">
+        <tbody>
+            <tr>
+                <td class="text-center" style="width: 180px;">
+                    <img src="/static/biogenix_labs_logo2.png" style="width: 150px;">
+                </td>
+                <td class="text-center">
+                    <h3 id="form_title">Training Program Consolidated Report</h3>
+                    <h3>{{ course.title }} Course</h3>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2"><strong>Document Control: BG/REC/GEN/094 v1.0</strong></td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+<div class="col-lg-12 col-md-12">
+    <table class="table table-bordered table-hover">
+        <thead>
+            <th title="No. of pre-tests taken">Pre-tests taken</th>
+            <th title="No. of post-tests taken">Post-tests taken</th>
+            <th>Post-test Passed</th>
+            <th>Post-test Failed</th>
+            <th title="Trainer evaluation score">Trainer score</th>
+        </thead>
+        <tbody>
+            <tr>
+                <td>{{ course.pre_tests|length }}</td>
+                <td>{{ course.post_tests|length }}</td>
+                <td>{{ post_fail }}</td>
+                <td>{{ post_pass }}</td>
+                <td></td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<style>
+
+</style>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+$(document).ready(function () {
+
+})
+</script>
+{% endblock %}

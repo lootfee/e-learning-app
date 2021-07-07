@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block app_content %}
+<div class="container">
+    <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12">
+        <h2>Update profile</h2>
+        {{ wtf.quick_form(form)}}
+        <a class="btn btn-primary" href="{{ url_for('update_password') }}">Update password</a>
+
+        <button class="btn" id="push_notification_btn" data-toggle="popover" data-placement="top"
+                data-content="You can enable/disable the notifications by clicking the icon before
+                 '{{ url_for('edit_profile', _external=True) }}' at the browser tab at the top.">
+            <i class="fas fa-bell"></i>
+        </button>
+
+        {#<button class="btn" id="camera_access_btn">
+            <i class="fas fa-camera"></i>
+            #}{#Enable Camera Access#}{#
+        </button>
+        <input type="file" id='photofile' accept="image/*" capture="camera" class="btn" style="display:none"/>
+        <button id="askLocation" class="btn btn-success" id="location_access_btn">
+            <i class="fas fa-map-marker-alt"></i>
+            #}{#Request location permission#}{#
+        </button>#}
+    </div>
+
+
+</div>
+
+{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<style>
+
+</style>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+$(document).ready(function () {
+    {% if current_user.designation %}
+        var designation_div = '<h4>Designation: {{ current_user.designation.name }}</h4>'
+        $(designation_div).insertAfter('#email')
+    {% endif %}
+
+    if (Notification.permission == 'granted'){
+        $('#push_notification_btn').removeClass()
+        $('#push_notification_btn').html('')
+        $('#push_notification_btn').addClass('btn btn-success')
+        $('#push_notification_btn').html('<i class="fas fa-bell"></i> Notifications Enabled')
+    }
+    else if (Notification.permission == 'denied' || Notification.permission == 'default'){
+        $('#push_notification_btn').removeClass()
+        $('#push_notification_btn').html('')
+        $('#push_notification_btn').addClass('btn btn-warning')
+        $('#push_notification_btn').html('<i class="fas fa-bell"></i> Notifications Disabled')
+    }
+    {#else if (Notification.permission == 'default'){
+       #}{# $('#request_push_notification_modal').modal('show')#}{#
+    }#}
+
+   {# $("#camera_access_btn").click(function () {
+        $("#photofile").trigger('click');
+    });
+
+    if ('geolocation' in navigator) {
+      document.getElementById('askLocation').addEventListener('click', function () {
+        navigator.geolocation.getCurrentPosition(function (location) {
+          console.log(location);
+        });
+      });
+    } else {
+      console.log('Geolocation API not supported.');
+    }#}
+});
+
+    {#Notification.requestPermission().then(function (permission) {
+        if (permission == 'granted') {
+            var title = 'Thank you! Device notifications are now enabled'
+            var options = {
+                body: 'You can also enable/disable the notifications by clicking the icon before ' +
+                    '"{{ url_for('edit_profile', _external=True) }}" at the browser tab at the top.',
+                icon: 'static/transparent_logo.ico',
+            }
+            navigator.serviceWorker.getRegistration().then(function (reg) {
+                reg.showNotification(title, options);
+            });
+            $('#push_notification_btn').removeClass()
+            $('#push_notification_btn').html('')
+            $('#push_notification_btn').addClass('btn btn-success')
+            $('#push_notification_btn').html('<i class="fas fa-bell"></i> Notifications Enabled')
+        } else if (permission == 'denied') {
+            alert('Device notifications disabled!')
+            $('#push_notification_btn').removeClass()
+            $('#push_notification_btn').html('')
+            $('#push_notification_btn').addClass('btn btn-warning')
+            $('#push_notification_btn').html('<i class="fas fa-bell"></i> Notifications Disabled')
+        }
+        $('#request_push_notification_modal').modal('hide')
+    });#}{#
+});#}
+</script>
+{% endblock %}

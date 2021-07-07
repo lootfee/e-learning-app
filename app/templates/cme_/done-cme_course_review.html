@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+{% import 'bootstrap/wtf.html' as wtf %}
+
+{% block app_content %}
+<div class="container-fluid">
+    <div class="col-lg-2 col-md-2 col-sm-12 col-xs-12" id="course_content_nav">
+        <ul class="nav nav-pills nav-stacked web-only" role="tablist">
+            <li>
+                <a class="btn btn-primary" href="{{ url_for('cme_course_content', course_id=course.id, course_title=course.title, content_index=0) }}">
+                    <i class="fas fa-angle-double-left"></i>
+                        Back to course
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="col-lg-6 col-lg-offset-3 col-md-6 col-md-offset-3 col-sm-12 col-xs-12">
+        <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 text-center">
+            <h3 style="font-weight: bold">Training and Development Activity Evaluation Form</h3>
+        </div>
+        <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+            <h3 class="text-center" style="font-weight: bold">{{ course.title }} Course</h3>
+            <div class="col-lg-2 col-lg-offset-2 col-md-2 col-md-offset-2 col-sm-4 col-xs-4">
+                <h4 style="float: right">Trainer:</h4>
+            </div>
+            <div class="col-lg-6 col-md-6 col-sm-8 col-xs-8">
+                <ul style="list-style-type: none; padding-left: 0;">
+                    {% for u in course.creators %}
+                    <li><h4>{{ u.name }}</h4></li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="col-lg-6 col-lg-offset-3 col-md-6 col-md-offset-3 col-sm-12 col-xs-12">
+        <h4 style="color: #040f8f; font-weight: bold;">Section A: Please select your response for the following criterias.</h4>
+        {{ wtf.quick_form(form) }}
+        {#<table class="table table-bordered">
+            <thead>
+                <tr style="background-color: #4DC4D3; color: white">
+                    <th>Criteria</th>
+                    <th>Strongly agree</th>
+                    <th>Agree</th>
+                    <th>Neutral</th>
+                    <th>Disagree</th>
+                    <th>Strongly disagree</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <th>Mark</th>
+                    <th>5</th>
+                    <th>4</th>
+                    <th>3</th>
+                    <th>2</th>
+                    <th>1</th>
+                </tr>
+                <tr style="background-color: #4DC4D3; color: white">
+                    <th colspan="6">Program effectiveness</th>
+                </tr>
+                <tr>
+                    <td>The objectives of the training were clearly defined.</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td>The knowledge I gained will help me in optimizing my work processes and my professional competence.</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+            </tbody>
+        </table>#}
+    </div>
+</div>
+
+{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+<style>
+ #course_content_nav {
+     position: fixed;
+     height: 100%;
+     {#border-right: 2px solid #6b6d72;#}
+     {#padding-top: 5%;#}
+     font-size: 16px;
+     font-weight: bold;
+     margin-left: 0 !important;
+ }
+
+
+
+ tbody tr:nth-child(even) {
+     background-color: #DBF3F6;
+ }
+
+ select {
+     width: 30% !important;
+     display: inline-block;
+     float: right;
+ }
+
+ .criteria_label {
+     background-color: #4DC4D3;
+     color: white;
+     margin: 4px;
+     font-weight: bold;
+     font-size: 18px;
+ }
+
+@media (max-width: 1023px) {
+    #course_content_nav {
+        width: 90%;
+        bottom: 0;
+        top: 90%;
+        border-right: none;
+    {#padding: 10px 50px 0 0;#} padding: 0;
+        text-align: center;
+        font-size: 20px;
+        z-index: 1;
+        position: fixed/*sticky;*/
+    }
+
+    form {
+         margin-bottom: 40px;
+     }
+
+    select {
+        width: 40% !important;
+        float: right;
+    }
+}
+
+</style>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+$(document).ready(function () {
+    $('select').prev().css('width', '50%')
+
+    var l1 = '<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 criteria_label">' +
+        'Program Effectiveness' +
+        '</div>'
+    var l2 = '<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 criteria_label">' +
+        'Quality of Visuals' +
+        '</div>'
+    var l3 = '<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 criteria_label">' +
+        'Trainer Evaluation' +
+        '</div>'
+    var l4 = '<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 criteria_label">' +
+        'Trainee Evaluation Questions' +
+        '</div>'
+
+    var l5 = '<h4 style="color: #040f8f; font-weight: bold;">Section B: Please provide your comments for the below questions</h4>'
+
+    var l2a = $('.form-control').eq(6)
+    var l3a = $('.form-control').eq(11)
+    var l4a = $('.form-control').eq(18)
+    var l5a = $('.form-control').eq(19)
+    $(l1).insertAfter('#csrf_token')
+    $(l2).insertAfter(l2a)
+    $(l3).insertAfter(l3a)
+    $(l4).insertAfter(l4a)
+    $(l5).insertAfter(l5a)
+})
+</script>
+{% endblock %}
+

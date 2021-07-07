@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block app_content %}
+<div class="container-fluid">
+
+    {% set side_nav_content = [] %}{#{'endpoint': 'index', 'name': 'Home', 'icon_class': 'fas fa-home'}#}
+
+    {% if current_user.id == 1 or current_user.designation_id <= 3 %}
+        {{ side_nav_content.append({'endpoint': url_for('users'), 'name': 'Users', 'icon_class': 'fas fa-users'})|default("", True) }}
+        {{ side_nav_content.append({'endpoint': url_for('cme_dashboards'), 'name': 'Dashboards', 'icon_class': 'far fa-chart-bar'})|default("", True) }}
+    {% endif %}
+
+    {% include 'sidenav.html' %}
+
+    <div class="col-lg-10 col-lg-offset-2 col-md-10 col-md-offset-2 col-sm-12 col-xs-12" id="admin_content">
+        {% block admin_content %}
+
+        {% endblock %}
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<style>
+
+</style>
+{% endblock %}
+
+

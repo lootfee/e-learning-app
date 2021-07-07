@@ -1,0 +1,30 @@
+{% extends "cme_/cme_dashboards_base.html" %}
+
+{% block dashboard_content %}
+<div class="col-lg-3 col-md-3">
+    <h4>Add Topic Category</h4>
+    {{ wtf.quick_form(form) }}
+</div>
+<div class="col-lg-9 col-md-9">
+    <table class="table table-bordered table-hover">
+        <thead>
+            <th>Topic Categories</th>
+        </thead>
+        <tbody>
+            {% for topic in topics %}
+            <tr>
+                <td>{{ topic.name }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+
+</script>
+{% endblock %}

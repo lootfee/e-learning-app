@@ -1,0 +1,17 @@
+{
+  "name": "Biogenix - Training and Development App",
+  "short_name": "Biogenix",
+  "theme_color": "#000000",
+  "background_color": "#002bff",
+  "icons": [
+    {
+        "src": "/static/transparent_logo-256.png",
+        "type": "image/png",
+        "sizes": "256x256"
+      }
+  ],
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait"
+}

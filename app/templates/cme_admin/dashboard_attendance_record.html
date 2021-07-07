@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block app_content %}
+{% set side_nav_content = [{'endpoint': url_for('cme_courses_summary', year=datetime_now.year, month=datetime_now.month), 'name': 'Back to summary', 'icon_class': 'fas fa-angle-double-left'}] %}
+{% include 'sidenav.html' %}
+
+<div class="col-lg-10 col-lg-offset-2 col-md-10 col-md-offset-2 col-sm-12 col-xs-12" id="cme_content">
+    <div class="col-lg-12 col-md-12 table-responsive">
+        <table class="table table-bordered table-hover" style="table-layout: fixed;">
+            <tbody>
+                <tr>
+                    <td class="text-center" style="width: 180px;">
+                        <img src="/static/biogenix_labs_logo2.png" style="width: 150px;">
+                    </td>
+                    <td class="text-center">
+                        <h3 id="form_title">Course Attendance Record Sheet</h3>
+                        <h3>{{ course.title }} Course</h3>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="2"><strong>Document Control: BG/REC/GEN/116 v1.0</strong></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="col-lg-12 col-md-12 table-responsive">
+        <table class="table table-bordered table-hover">
+            <thead>
+                <th>Name</th>
+                <th>Designation</th>
+                {#<th>Department</th>#}
+                <th>Pre-test</th>
+                <th>Post-test</th>
+                <th title="Change in Knowledge">CIK</th>
+                <th>Result</th>
+            </thead>
+            <tbody>
+                {% for pre_test in course.pre_tests|sort(attribute='user.name') %}
+                <tr>
+                    <td>{{ pre_test.user.name }}</td>
+                    <td>{{ pre_test.user.designation.name }}</td>
+                    {#<td>{{ pre_test.user.area.name }}</td>#}
+                    <td>{{ pre_test.score }}</td>
+                    <td>{{ pre_test.post_test_score() }}</td>
+                    <td>
+                        {{ (((pre_test.post_test_score() - pre_test.score)/pre_test.course.questions|length) * 100)|round|int }}%
+                    </td>
+                    <td>
+                        {% if (pre_test.post_test_score()/pre_test.course.questions|length) * 100 > 80  %}
+                            PASSED
+                        {% else %}
+                            FAIL
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<style>
+
+</style>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+$(document).ready(function () {
+
+})
+</script>
+{% endblock %}

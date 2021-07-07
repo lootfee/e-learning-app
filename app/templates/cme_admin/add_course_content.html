@@ -1,0 +1,273 @@
+{% extends "base.html" %}
+
+{% block app_content %}
+<div class="container-fluid">
+    {% set side_nav_content = [] %}
+    {{ side_nav_content.append({'endpoint': url_for('cme_manage_courses'), 'name': 'Manage Courses', 'icon_class': 'fas fa-tasks'})|default("", True) }}
+    {% if course.published == False %}
+    {{ side_nav_content.append({'modal': 'data-toggle=modal data-target=#add_content_modal', 'name': 'Add Chapter', 'icon_class': 'fas fa-plus-square'})|default("", True) }}
+    {{ side_nav_content.append({'endpoint': url_for('cme_manage_exam', token=course.get_id_token()), 'name': 'Manage Exam', 'icon_class': 'fas fa-file-alt'})|default("", True) }}
+    {{ side_nav_content.append({'with_attributes': {'name': 'Publish Course',
+                                                    'icon_class': 'fas fa-book-reader',
+                                                    'attributes': {"data-toggle": "popover",
+                                                                    "data-container": "body",
+                                                                    "data-placement": "top",
+                                                                    "title": "Publish Course",
+                                                                    "class": "btn btn-primary btn-block",
+                                                                    "data-html": "true",
+                                                                    "data-content": "<h4>Are you sure you want to publish this course?</h4>
+                                                                                        <a class='btn btn-primary' href=" + url_for('cme_publish_course', token=course.get_id_token()) + ">
+                                                                                        <i class='fas fa-book-reader'></i> Publish</a>"} },})|default("", True) }}
+    {% elif course.published == True %}
+    {{ side_nav_content.append({'with_attributes': {'name': 'Unpublish Course',
+                                                    'icon_class': 'fas fa-book-dead',
+                                                    'attributes': {"data-toggle": "popover",
+                                                                    "data-container": "body",
+                                                                    "data-placement": "top",
+                                                                    "title": "Unpublish Course",
+                                                                    "class": "btn btn-danger btn-block",
+                                                                    "data-html": "true",
+                                                                    "data-content": "<h4>Are you sure you want to unpublish this course?</h4>
+                                                                                        <a class='btn btn-primary' href=" + url_for('cme_publish_course', token=course.get_id_token()) + ">
+                                                                                        <i class='fas fa-book-dead'></i> Unpublish</a>"} },})|default("", True) }}
+    {{ side_nav_content.append({'endpoint': url_for('cme_course_user_questions', token=course.get_id_token()), 'name': 'Posted Questions', 'icon_class': 'fas fa-question-circle'})|default("", True) }}
+    {% endif %}
+
+    {% include 'sidenav.html' %}
+
+    <div class="col-lg-10 col-lg-offset-2 col-md-10 col-md-offset-2 col-sm-12 col-xs-12" id="cme_content">
+        <div class="col-lg-12 col-md-12">
+            <h3 class="text-center" id="course_title">
+                {{ course.title }} Course
+            </h3>
+        </div>
+        <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12" id="course_cover_page_cont">
+            <img id="course_cover_page" src="{{ url_for('static', filename='cme/' + course.cover_page) }}">
+            {#<div class="col-lg-10 col-lg-offset-1 col-md-10 col-md-offset-1 col-sm-12 col-xs-12">
+
+            </div>#}
+        </div>
+        <div class="col-lg-8 col-lg-offset-2 col-md-8 col-md-offset-2 col-sm-12 col-xs-12" id="course_content_cont">
+            <h4 class="text-center">Course Chapters</h4>
+            {% if course.contents %}
+            {% for content in course.contents|sort(attribute='index') %}
+            <div class="col-lg-8 col-md-8 col-sm-8 col-xs-8">
+                <a href="{{ url_for('cme_add_course_content_slides', token=content.get_id_token()) }}">
+                   {{ content.index|string }}. {{ content.title }}
+                </a>
+            </div>
+            <div class="col-lg-4 col-md-4 col-sm-4 col-xs-4">
+                <div style="float: right;">
+                    {% if course.published == False %}
+                    <button class="btn btn-danger btn-sm" type="button"
+                            data-toggle="popover" data-container="body"
+                            data-html="true" title="Delete Content?"
+                            data-content="<p>Are you sure you want to delete {{ content.title }}?</p>
+                            <a class='btn btn-danger btn-sm'
+                            href='{{ url_for('cme_delete_course_content', token=content.get_id_token()) }}'>
+                            <i class='fas fa-trash-alt'></i> Delete</a>"
+                            style="padding: 2px;">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                    <button title="Edit content" class="btn btn-primary btn-sm" data-toggle="modal"
+                            data-target="#edit_content_modal" data-content_id="{{ content.get_id_token() }}"
+                            data-content_title="{{ content.title }}" data-content_index="{{ content.index }}"
+                            style="padding: 2px;">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+    {#<div class="col-lg-2 col-md-2 col-sm-12 col-xs-12" id="course_content_nav">
+        <div class="col-lg-12 col-md-12 col-sm-6 col-xs-6" id="admin_panel">
+            <h4>
+                <a href="{{ url_for('cme_manage_courses') }}">
+                    << Back to manage courses
+                </a>
+            </h4>
+            <h3>
+                Course Contents
+                {% if course.published == False %}
+                <a title="Add content" class="btn btn-primary btn-sm" style="padding: 3px;"
+                   data-toggle="modal" data-target="#add_content_modal">
+                    <i class="fas fa-plus-square"></i>
+                </a>
+                {% endif %}
+            </h3>
+        </div>
+        <div class="col-lg-12 col-md-12 col-sm-6 col-xs-6">
+            {% if course.contents %}
+            <ol>
+                {% for content in course.contents|sort(attribute='index') %}
+                <li>
+                    <div style="display: inline-flex; width: 70%">
+                        <a href="{{ url_for('cme_add_course_content_slides', content_id=content.id) }}">
+                            {{ content.title }}
+                        </a>
+                    </div>
+                    <div style="display: inline-block;">
+                        {% if course.published == False %}
+                        <button class="btn btn-danger btn-sm" type="button"
+                                data-toggle="popover" data-container="body"
+                                data-html="true" title="Delete Content?"
+                                data-content="<p>Are you sure you want to delete {{ content.title }}?</p>
+                                <a class='btn btn-danger btn-sm'
+                                href='{{ url_for('cme_delete_course_content', content_id=content.id) }}'>
+                                <i class='fas fa-trash-alt'></i> Delete</a>"
+                                style="float: right; padding: 2px;">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                        <button title="Edit content" class="btn btn-primary btn-sm" data-toggle="modal"
+                                data-target="#edit_content_modal" data-content_id="{{ content.id }}"
+                                data-content_title="{{ content.title }}" data-content_index="{{ content.index }}"
+                                style="float: right; padding: 2px; margin-right: 2px;">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        {% endif %}
+                    </div>
+                </li>
+                {% endfor %}
+            </ol>
+            {% endif %}
+        </div>
+        <div class="col-lg-12 col-md-12 col-sm-6 col-xs-6" style="position: fixed; bottom: 0; margin-bottom: 10px; left: 10px;">
+            {% if course.published == False %}
+            <a class="btn btn-primary" href="{{ url_for('cme_manage_exam', course_id=course.id, course_title=course.title) }}">
+                Manage Exam
+            </a>
+            <button class="btn btn-primary"
+                    data-toggle="popover" data-container="body" title="Publish Course"
+                    data-html="true" data-content="<h4>Are you sure you want to publish this course?</h4>
+                    <a class='btn btn-primary' href='{{ url_for('cme_publish_course', course_id=course.id) }}'>
+                    <i class='fas fa-book-reader'></i> Publish
+                    </a>">
+                <i class="fas fa-book-reader"></i>
+                    Publish
+            </button>
+            {% elif course.published == True %}
+            <button class="btn btn-warning"
+                    data-toggle="popover" data-container="body" title="Unpublish Course"
+                    data-html="true" data-content="<h4>Are you sure you want to unpublish this course?</h4>
+                    <a class='btn btn-warning' href='{{ url_for('cme_publish_course', course_id=course.id) }}'>
+                    <i class='fas fa-book-dead'></i> Unpublish
+                    </a>">
+                <i class="fas fa-book-dead"></i>
+                    Unpublish
+            </button>
+            <a class="btn btn-primary" href="{{ url_for('cme_course_user_questions', course_id=course.id) }}"  style="padding: 6px 10px">
+                <i class="fas fa-question-circle"></i>
+                 Posted questions
+            </a>
+            {% endif %}
+        </div>
+    </div>#}
+
+</div>
+
+<div class="modal fade" id="add_content_modal" tabindex="-1" role="dialog" aria-labelledby="add_content_modal_Label">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="add_content_modal_Label">Add Content</h4>
+            </div>
+            <div class="modal-body">
+            {{ wtf.quick_form(form) }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="edit_content_modal" tabindex="-1" role="dialog" aria-labelledby="edit_content_modal_Label">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="edit_content_modal_Label">Edit Content</h4>
+            </div>
+            <div class="modal-body">
+            {{ wtf.quick_form(edit_form) }}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<style>
+#course_cover_page_cont {
+    text-align: center;
+}
+
+#course_cover_page {
+    width: 80%;
+    height: 60vh;
+}
+
+#course_content_cont {
+    border: 2px solid gainsboro;
+    border-radius: 8px;
+    margin-top: 10px;
+    padding-bottom: 10px;
+}
+
+@media (max-width: 1023px){
+    #course_title {
+        font-size: 18px;
+    }
+    #course_cover_page {
+        width: 100%;
+        height: 60vh;
+    }
+}
+
+@media (max-width: 1023px) and (max-height: 500px) {
+
+}
+
+@media (max-width: 550px) {
+    #course_cover_page {
+        width: 100%;
+        height: 30vh;
+    }
+
+}
+{#@media (max-width: 768px){
+    #course_content_nav {
+        bottom: 0;
+        top: 90%;
+        padding: 10px 50px 0 0;
+        text-align: center;
+        font-size: 20px;
+    }
+
+}#}
+
+</style>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+$(document).ready(function () {
+    $("body").tooltip({ selector: '[data-toggle=tooltip]' });
+    $("body").popover({ selector: '[data-toggle=popover]' });
+
+    $('#edit_content_modal').on('show.bs.modal', function (event) {
+        var button = $(event.relatedTarget)
+        var content_id = button.data('content_id')
+        var content_title = button.data('content_title')
+        var index = button.data('content_index')
+        var modal = $(this)
+        modal.find('form #content_id').val(content_id)
+        modal.find('form #edit_index').val(index)
+        modal.find('form #edit_title').val(content_title)
+    })
+})
+</script>
+{% endblock %}

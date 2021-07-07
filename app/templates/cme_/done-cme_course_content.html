@@ -1,0 +1,547 @@
+{% extends "base.html" %}
+{% import 'bootstrap/wtf.html' as wtf %}
+
+{% block app_content %}
+<div class="container-fluid">
+    <div class="col-lg-2 col-md-2 col-sm-10 col-sm-offset-1 col-xs-10 col-xs-offset-1" id="course_content_nav">
+        <div class="col-lg-12 col-md-12 col-sm-1 col-xs-1" id="admin_panel">
+            <h4>
+                <a href="{{ url_for('continuing_medical_education') }}">
+                    {#<span class="mobile-only">
+                        <i class="fas fa-angle-double-left"></i> Back
+                    </span>#}
+                    <span class="web-only">
+                        <i class="fas fa-angle-double-left"></i>
+                        Back to courses
+                    </span>
+                </a>
+            </h4>
+            <h3>
+                <span class="web-only">Course Contents</span>
+            </h3>
+        </div>
+        <div class="col-lg-12 col-md-12 col-sm-9 col-xs-9">
+            {% if course.contents %}
+            <ul class="nav nav-pills nav-stacked web-only" role="tablist">
+                {% if course.pre_test_start(current_user) == False %}
+                <li>
+                    <a class="btn btn-primary" href="{{ url_for('cme_take_pre_test', course_id=course.id, question_id=course.questions[0].id) }}" style="font-size: 12px;">
+                        Start Pre-test
+                    </a>
+                </li>
+                {% elif course.pre_test_start(current_user) == True and course.pre_test_end(current_user) == False %}
+                <li>
+                    <a class="btn btn-primary" href="{{ url_for('cme_take_pre_test', course_id=course.id, question_id=course.questions[0].id) }}" style="padding: 6px 10px">
+                        Continue Pre-test
+                    </a>
+                </li>
+                {% else %}
+                    {% for content in course.contents|sort(attribute='index') %}
+                    <li class="pill_{{ content.index }}">
+                        <a href="{{ url_for('cme_course_content', course_id=course.id, course_title=course.title, content_index=content.index) }}">
+                            {{ content.index }}. {{ content.title }}
+                        </a>
+                    </li>
+                    {% endfor %}
+                    {% if course.is_completed(current_user) %}
+                        {% if course.post_test_start(current_user) == False %}
+                        <li>
+                            <a class="btn btn-primary" href="{{ url_for('cme_take_post_test', course_id=course.id, question_id=course.questions[0].id) }}" style="padding: 6px 10px">
+                                Start Post-test
+                            </a>
+                        </li>
+                        {% elif course.open_post_test(current_user) %}
+                        {#{% elif course.post_test_start(current_user) == True and course.post_test_end(current_user) == False %}#}
+                        <li>
+                            <a class="btn btn-primary" href="{{ url_for('cme_take_post_test', course_id=course.id, question_id=course.questions[0].id) }}" style="padding: 6px 10px">
+                                Continue Post-test
+                            </a>
+                        </li>
+                        {% elif course.post_test_start(current_user) == True and course.post_test_end(current_user) == True %}
+                        <li>
+                            <a class="btn btn-primary" href="{{ url_for('post_test_summary', course_id=course.id) }}" style="padding: 6px 10px">
+                                <i class="fab fa-wpforms"></i>
+                                Post-test Summary
+                            </a>
+                        </li>
+                        {% if not course.has_been_reviewed(current_user) %}
+                        <li>
+                            <a class="btn btn-primary" href="{{ url_for('cme_review_course', course_id=course.id) }}"  style="padding: 6px 10px">
+                                <i class="fas fa-user-check"></i>
+                                 Review Course
+                            </a>
+                        </li>
+                        {% endif %}
+                        {% if course.release_certificate(current_user) %}
+                            <li>
+                                <a class="btn btn-primary" href="{{ url_for('create_cme_certificate_pdf', course_id=course.id) }}" style="padding: 6px 10px">
+                                    <i class="fas fa-certificate"></i>
+                                    Download Certificate
+                                </a>
+                            </li>
+                        {% endif %}
+                        {% endif %}
+                    {% endif %}
+                {% endif %}
+            </ul>
+            <ul class="nav nav-pills mobile-only" role="tablist" style="margin-left: 30px;">
+                <li>
+                    <a class="btn btn-default" title="Back to courses"
+                       href="{{ url_for('continuing_medical_education') }}"
+                        style="padding: 6px 10px">
+                        <strong><i class="fas fa-angle-double-left"></i></strong>
+                    </a>
+                </li>
+                {% if course.pre_test_start(current_user) == False %}
+                <li>
+                    <a class="btn btn-primary" href="{{ url_for('cme_take_pre_test', course_id=course.id, question_id=course.questions[0].id) }}" style="padding: 6px 10px">
+                        Start Pre-test
+                    </a>
+                </li>
+                {% elif course.pre_test_start(current_user) == True and course.pre_test_end(current_user) == False %}
+                <li>
+                    <a class="btn btn-primary" href="{{ url_for('cme_take_pre_test', course_id=course.id, question_id=course.questions[0].id) }}" style="padding: 6px 10px">
+                        Continue Pre-test
+                    </a>
+                </li>
+                {% else %}
+                    {% for content in course.contents|sort(attribute='index') %}
+                    <li class="pill_{{ content.index }}">
+                        <a class="btn btn-default" title="{{ content.title }}"
+                           href="{{ url_for('cme_course_content', course_id=course.id, course_title=course.title, content_index=content.index) }}"
+                            style="padding: 6px 10px">
+                            <strong>{{ content.index }}</strong>
+                        </a>
+                    </li>
+                    {% endfor %}
+                    {% if course.is_completed(current_user) %}
+                        {% if course.post_test_start(current_user) == False %}
+                        <li>
+                            <a class="btn btn-primary" href="{{ url_for('cme_take_post_test', course_id=course.id, question_id=course.questions[0].id) }}" style="padding: 6px 10px">
+                                Start Post-test
+                            </a>
+                        </li>
+                        {% elif course.open_post_test(current_user) %}
+                        {#{% elif course.post_test_start(current_user) == True and course.post_test_end(current_user) == False %}#}
+                        <li>
+                            <a class="btn btn-primary" href="{{ url_for('cme_take_post_test', course_id=course.id, question_id=course.questions[0].id) }}" style="padding: 6px 10px">
+                                Continue Post-test
+                            </a>
+                        </li>
+                        {% elif course.post_test_start(current_user) == True and course.post_test_end(current_user) == True %}
+                        <li>
+                            <a title="Post-test Summary" class="btn btn-primary" href="{{ url_for('post_test_summary', course_id=course.id) }}" style="padding: 6px 10px">
+                                <i class="fab fa-wpforms"></i>
+                            </a>
+                        </li>
+                        {% if not course.has_been_reviewed(current_user) %}
+                        <li>
+                            <a title="Review course" class="btn btn-primary" href="{{ url_for('cme_review_course', course_id=course.id) }}"  style="padding: 6px 10px">
+                                <i class="fas fa-user-check"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                        {% if course.release_certificate(current_user) %}
+                            <li>
+                                <a title="Print Certificate" class="btn btn-primary" href="{{ url_for('create_cme_certificate_pdf', course_id=course.id) }}" style="padding: 6px 10px">
+                                    <i class="fas fa-certificate"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                        {% endif %}
+                    {% endif %}
+                {% endif %}
+            </ul>
+            {% endif %}
+        </div>
+        <div class="col-lg-12 col-md-12 col-sm-2 col-xs-2 next_course">
+            {% if content %}
+                {% if content.is_completed(current_user) == False %}
+                <a class="btn btn-primary web-only" href="{{ url_for('cme_complete_lesson', content_id=content.id) }}"><i class="far fa-check-circle"></i> Complete Lesson</a>
+                <a class="btn btn-primary mobile-only" title="Complete lesson" href="{{ url_for('cme_complete_lesson', content_id=content.id) }}"><i class="far fa-check-circle"></i></a>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+    <div class="col-lg-10 col-lg-offset-2 col-md-10 col-md-offset-2 col-sm-12 col-xs-12" id="cme_content">
+        {% if not content %}
+        {#<div class="col-lg-12 col-md-12">
+            <h2 class="text-center web-only">
+                {{ course.title }}
+            </h2>
+        </div>#}
+        <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+            <div class="col-lg-10 col-lg-offset-1 col-md-10 col-md-offset-1 col-sm-12 col-xs-12 title_page">
+                <img class="title_page_img" src="{{ url_for('static', filename='cme_/' + course.cover_page) }}" style="width: 100%">
+            </div>
+            {% if course.pre_test_start(current_user) == False %}
+                <div class="text-center web-only">
+                    <a class="btn btn-primary btn-lg" href="{{ url_for('cme_take_pre_test', course_id=course.id, question_id=course.questions[0].id) }}" style="margin-top: 5px;">
+                        <strong>Start Pre-test</strong>
+                    </a>
+                </div>
+            {% elif course.pre_test_start(current_user) == True and course.pre_test_end(current_user) == False %}
+                <div class="text-center web-only">
+                    <a class="btn btn-primary" href="{{ url_for('cme_take_pre_test', course_id=course.id, question_id=course.questions[0].id) }}" style="margin-top: 5px;">
+                        Continue Pre-test
+                    </a>
+                </div>
+            {% endif %}
+
+            {% if course.is_completed(current_user) %}
+                {% if course.post_test_start(current_user) == False %}
+                <div class="text-center web-only">
+                    <a class="btn btn-primary" href="{{ url_for('cme_take_post_test', course_id=course.id, question_id=course.questions[0].id) }}" style="padding: 6px 10px">
+                        Start Post-test
+                    </a>
+                </div>
+                {% elif course.open_post_test(current_user) %}
+                {#{% elif course.post_test_start(current_user) == True and course.post_test_end(current_user) == False %}#}
+                <div class="text-center web-only">
+                    <a class="btn btn-primary" href="{{ url_for('cme_take_post_test', course_id=course.id, question_id=course.questions[0].id) }}" style="padding: 6px 10px">
+                        Continue Post-test
+                    </a>
+                </div>
+                {% endif %}
+            {% endif %}
+        </div>
+        {% else %}
+        <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+            {#<div class="col-lg-12 col-md-12">
+                <h2 class="text-center web-only">
+                    {{ content.title }}
+                </h2>
+            </div>#}
+            <div class="col-lg-10 col-lg-offset-1 col-md-10 col-md-offset-1 col-sm-10 col-sm-offset-1 col-xs-10 col-xs-offset-1">
+                {% if content.slides %}
+                    <div id="content_{{ content.id }}" class="carousel slide" data-ride="carousel">
+                        <!-- Indicators -->
+                        <ol class="carousel-indicators">
+                            {% for slide in content.slides %}
+                            <li data-target="#content_{{ content.id }}" data-slide-to="{{ slide.index }}" id="indicator_index_{{ slide.index }}"></li>
+                            {% endfor %}
+                        </ol>
+
+                        {% set video = namespace(file=False) %}
+                        <!-- Wrapper for slides -->
+                        <div class="carousel-inner" role="listbox" {#style="height: 600px;"#}>
+                            {% for slide in content.slides %}
+                            <div class="item" id="item_index_{{ slide.index }}">
+                                {% if slide.image_file %}
+                                <img class="item-img" src="{{ url_for('static', filename='cme_/' + slide.image_file) }}" {#style="height: 600px;"#}>
+                                <div class="carousel-caption">
+                                    <audio id="audio_{{ slide.id }}" controls>
+                                      <source src="{{ url_for('static', filename='cme_/' + slide.sound_file) }}" type="audio/mpeg">
+                                    </audio>
+                                </div>
+                                {% else %}
+                                {% set video.file = True %}
+                                <div class="text-center">
+                                    <video controls>
+                                        <source src="{{ url_for('static', filename='cme_/' + slide.sound_file) }}" type="video/mp4">
+                                    </video>
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            {% endfor %}
+                        </div>
+
+                        <!-- Controls -->
+                        {% if video.file == False %}
+                        <a class="left carousel-control" href="#content_{{ content.id }}" role="button" data-slide="prev" style="background: none">
+                            <span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span>
+                            <span class="sr-only">Previous</span>
+                        </a>
+                        <a class="right carousel-control" href="#content_{{ content.id }}" role="button" data-slide="next" style="background: none">
+                            <span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span>
+                            <span class="sr-only">Next</span>
+                        </a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+        <div class="post_question_cont">
+            <a class="btn btn-default" title="Ask a question?" data-toggle="modal" data-target="#post_question_modal">
+                <i class="fas fa-question-circle"></i>
+            </a>
+        </div>
+    </div>
+</div>
+
+{% if not current_user.employee_id %}
+<!-- Modal -->
+<div class="modal fade" id="employee_id_modal" tabindex="-1" role="dialog" aria-labelledby="employee_id_modal_label">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="employee_id_modal_label">Submit Employee ID</h4>
+      </div>
+      <div class="modal-body">
+        {{ wtf.quick_form(emp_id_form) }}
+      </div>
+      <div class="modal-footer">
+        {#<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary">Save changes</button>#}
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div class="modal fade" id="post_question_modal" tabindex="-1" role="dialog" aria-labelledby="post_question_modal_label">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="employee_id_modal_label">Ask the course creator a question?</h4>
+      </div>
+      <div class="modal-body">
+        {{ wtf.quick_form(course_question_form) }}
+          <br>
+        <div>
+            <h3>Posted questions</h3>
+            <div class="user_questions_cont">
+
+            </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        {#<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary">Save changes</button>#}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+<style>
+ #course_content_nav {
+     position: fixed;
+     height: 100%;
+     border-right: 2px solid #6b6d72;
+     {#padding-top: 5%;#}
+     font-size: 16px;
+     font-weight: bold;
+     margin-left: 0 !important;
+ }
+
+
+ .carousel-inner {
+     height: 600px;
+ }
+
+ .item-img {
+     height: 600px;
+     width: 100%;
+ }
+
+ .web-only {
+        display: block;
+    }
+ .mobile-only {
+        display: none;
+    }
+
+ audio {
+     opacity: 0.15;
+     width: 100%;
+ }
+
+ audio:hover {
+     opacity: 1;
+ }
+
+ video {
+     width: 100%;
+     height: 600px;
+ }
+
+ .next_course {
+     position: relative;
+     bottom: 0;
+     margin-top: 10px;
+     margin-bottom: 10px;
+     left: 10px;
+ }
+
+ .next_course a {
+     float: right;
+ }
+
+{% if not current_user.employee_id %}
+ #employee_id_modal form #submit {
+     float: right;
+ }
+{% endif %}
+
+ .post_question_cont a {
+    font-size: 60px;
+    color: blue;
+    border: none;
+    position: fixed;
+    top: 80%;
+    right: 5%;
+    background: transparent;
+ }
+
+
+@media (max-width: 1023px){
+    #course_content_nav {
+        bottom: 0;
+        top: 90%;
+        border-right: none;
+        {#padding: 10px 50px 0 0;#}
+        padding: 0;
+        text-align: center;
+        font-size: 20px;
+    }
+
+    .web-only {
+        display: none;
+    }
+    .mobile-only {
+        display: block;
+    }
+
+    .carousel-inner {
+        height: 80vh;
+     }
+
+    .item-img {
+        height: 80vh !important;
+    }
+
+    .title_page_img {
+        height: 80vh
+    }
+
+    video {
+        width: 100%;
+        height: 80vh;
+    }
+
+    .next_course {
+         position: relative;
+         bottom: 0;
+         margin-top: 2px;
+         margin-bottom: 10px;
+         left: 10px;
+     }
+
+    .post_question_cont a {
+        font-size: 40px;
+     }
+
+}
+
+@media (max-width: 512px){
+    .carousel-inner {
+        height: 30vh;
+     }
+
+    .item-img {
+        height: 30vh !important;
+    }
+
+    .title_page_img {
+        height: 30vh
+    }
+
+    video {
+        width: 100%;
+        height: 30vh;
+    }
+}
+
+
+</style>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+$(document).ready(function () {
+    $("body").tooltip({ selector: '[data-toggle=tooltip]' });
+    $("body").popover({ selector: '[data-toggle=popover]' });
+
+    $('#indicator_index_1').addClass('active')
+    $('#item_index_1').addClass('active')
+    $('.pill_{{ content_index }}').addClass('active')
+
+    $('.carousel').carousel({
+        interval: false,
+        wrap: false
+    })
+
+    {% if not current_user.employee_id %}
+    $('#employee_id_modal').modal({
+        backdrop: 'static',
+        keyboard: false
+    })
+    $('#employee_id_modal').modal('show')
+    {% endif %}
+
+    $('#post_question_modal').on('show.bs.modal', function (e) {
+        $('.user_questions_cont').empty();
+        $.ajax({
+                type: "GET",
+                url: '{{ url_for('get_cme_user_questions', course_id=course.id) }}',
+                success: function (data) {
+                    if (data.length > 0){
+                        let panel = document.createElement('div')
+                        $(panel).addClass('panel-group')
+                        $(panel).attr('id', 'questions_accordion')
+                        $(panel).attr('role', 'tablist')
+                        $(panel).attr('aria-multiselectable', 'true')
+                        $.each(data, function (i, e) {
+                            $(panel).append('<div class="panel panel-info">' +
+                                '    <div class="panel-heading" role="tab" id="heading_question_' + e.question_id + '">' +
+                                '        <div class="row">' +
+                                '              <a class="collapsed" role="button" data-toggle="collapse" data-parent="#questions_accordion" href="#question_' + e.question_id +'" aria-expanded="false" aria-controls="question_' + e.question_id + '">' +
+                                '                   <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">' +
+                                '                       <h4 class="panel-title">' +
+                                                            e.question +
+                                '                       </h4>' +
+                                '                   </div>' +
+                                '                   <div class="col-lg-7 col-md-7 col-sm-12 col-xs-12"> Posted by:' +
+                                                        e.posted_by +
+                                '                   </div>' +
+                                '                   <div class="col-lg-5 col-md-5 col-sm-12 col-xs-12"> Date posted:' +
+                                                        e.date_posted +
+                                '                   </div>' +
+                                '              </a>' +
+                                '        </div>' +
+                                '    </div>' +
+                                '    <div id="question_' + e.question_id +'" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading_question_' + e.question_id + '">' +
+                                '       <div class="panel-body">' +
+                                '           <div class="row">' +
+                                '               <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">' +
+                                                    e.answer +
+                                '               </div>' +
+                                '               <div class="col-lg-7 col-md-7 col-sm-12 col-xs-12">Answered by: ' +
+                                                    e.answered_by +
+                                '               </div>' +
+                                '               <div class="col-lg-5 col-md-5 col-sm-12 col-xs-12">Date answered: ' +
+                                                    e.date_answered +
+                                '               </div>' +
+                                '           </div>' +
+                                '       </div>' +
+                                '    </div>' +
+                                '  </div>')
+                        })
+                        $('.user_questions_cont').append(panel)
+                    }
+                }
+            });
+    })
+
+})
+</script>
+{% endblock %}

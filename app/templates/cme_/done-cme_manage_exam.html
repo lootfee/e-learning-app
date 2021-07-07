@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+{% import 'bootstrap/wtf.html' as wtf %}
+
+{% block app_content %}
+<div class="container-fluid">
+    <div class="col-lg-2 col-md-2 col-sm-12 col-xs-12" id="course_content_nav">
+        <div class="col-lg-12 col-md-12 col-sm-6 col-xs-6" id="admin_panel">
+            <h4>
+                <a href="{{ url_for('cme_add_course_content', course_id=course.id) }}">
+                    < Back to course
+                </a>
+            </h4>
+            <h3>
+                Questions
+                {% if course.published == False %}
+                <a title="Add question" class="btn btn-primary btn-sm" style="padding: 3px;"
+                   data-toggle="modal" data-target="#add_question_modal">
+                    <i class="fas fa-plus-square"></i>
+                </a>
+                {% endif %}
+            </h3>
+        </div>
+        <div class="col-lg-12 col-md-12 col-sm-6 col-xs-6">
+            <ol>
+                {% for q in course.questions %}
+                <li>
+                    Question {{ loop.index }}
+                    <a title="Edit question" class="btn btn-primary btn-sm" style="padding: 3px;"
+                        data-toggle="modal" data-target="#edit_question_modal"
+                        data-question_id="{{ q.id }}">
+                        <i class="fa fa-edit"></i>
+                    </a>
+                </li>
+                {% endfor %}
+            </ol>
+
+        </div>
+        <div class="col-lg-12 col-md-12 col-sm-6 col-xs-6" style="position: fixed; bottom: 0; margin-bottom: 10px; left: 10px;">
+
+        </div>
+    </div>
+    <div class="col-lg-10 col-lg-offset-2 col-md-10 col-md-offset-2 col-sm-12 col-xs-12" id="cme_content">
+        <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+            <h2 class="text-center">
+                {{ course.title }} Course Exam
+            </h2>
+        </div>
+
+        <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+            <ol>
+                {% for q in course.questions %}
+                <li>
+                    {{ q.title }}
+                    <ol type="a">
+                        {% for c in q.choices %}
+                        <li>{{ c.title }} {% if c.answer == True %} - Selected answer {% endif %}</li>
+                        {% endfor %}
+                    </ol>
+                    Answer explanation: {{ q.answer_explanation }}
+                </li>
+                {% endfor %}
+            </ol>
+        </div>
+
+    </div>
+</div>
+
+<div class="modal fade" id="add_question_modal" tabindex="-1" role="dialog" aria-labelledby="add_question_modal_label">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="add_question_modal_label">Add Question</h4>
+            </div>
+            <div class="modal-body">
+            {{ wtf.quick_form(form) }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="edit_question_modal" tabindex="-1" role="dialog" aria-labelledby="edit_question_modal_label">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="edit_question_modal_label">Edit Question</h4>
+            </div>
+            <div class="modal-body">
+            {{ wtf.quick_form(edit_form) }}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<style>
+#course_content_nav {
+    position: fixed;
+    height: 100%;
+    border-right: 2px solid #6b6d72;
+    {#padding-top: 5%;#}
+    font-size: 20px;
+    font-weight: bold;
+}
+
+{#label[for=choices]{
+    display: block !important;
+}
+
+.choices {
+    display: inline-block;
+    width: 90%;
+}#}
+
+
+@media (max-width: 768px){
+    #course_content_nav {
+        bottom: 0;
+        top: 90%;
+        padding: 10px 50px 0 0;
+        text-align: center;
+        font-size: 20px;
+    }
+
+}
+
+</style>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+$(document).ready(function () {
+    $("body").tooltip({ selector: '[data-toggle=tooltip]' });
+    $("body").popover({ selector: '[data-toggle=popover]' });
+
+    {#var choices_cont = document.createElement('div')
+    $(choices_cont).addClass('choices_cont')
+    $(choices_cont).css('margin-bottom', '4px')
+    var add_choice_btn = document.createElement('button')
+    $(add_choice_btn).addClass('btn btn-primary add_choice_btn')
+    $(add_choice_btn).attr('title', 'Add choices')
+    $(add_choice_btn).attr('type', 'button')
+    $(add_choice_btn).html(' <i class="fas fa-plus-square"></i> Add Choices')
+    var ans = "<span> Select the radio field of correct answer</span>"
+    $(choices_cont).append(add_choice_btn)
+    $(choices_cont).append(ans)#}
+
+    $('#add_question_modal').on('show.bs.modal', function () {
+        $('.choices_cont').remove()
+        var choices_cont = create_choice_cont()
+        $(choices_cont).insertBefore($('#answer_explanation').parent())
+    })
+
+
+    $('#submit').prop('disabled', true)
+
+    $(document).on('click', '.add_choice_btn', function () {
+        $('#submit').prop('disabled', true)
+        var choices_len = $('.choices').length + 1
+        var choice = '<div class="radio choices">' +
+            '  <label style="width: 100%">' +
+            '    <input class="rd_btn" type="radio" name="question_radios" value="' + choices_len + '">' +
+            '    <input class="form-control rd_txt" type="text" class="form-control" name="option' + choices_len + '">' +
+            '  </label>' +
+            '</div>'
+        $('.choices_cont').append(choice)
+    })
+
+    $(document).on('change', '.rd_btn', function () {
+        var rd_txts = true
+        $.each($('.rd_txt'), function (i, e) {
+            if ($(e).val().length == 0){
+                rd_txts = false
+            }
+        })
+        if (this.checked && rd_txts == true){
+            $('#submit').prop('disabled', false)
+            $('#edit_submit').prop('disabled', false)
+        }
+        else {
+            $('#submit').prop('disabled', true)
+            $('#edit_submit').prop('disabled', true)
+        }
+    })
+
+    $('#edit_question_modal').on('show.bs.modal', function (event) {
+        $('#edit_submit').prop('disabled', true)
+        $('.choices_cont').remove()
+        var choices_cont = create_choice_cont()
+        $(choices_cont).insertBefore($('#edit_answer_explanation').parent())
+        var button = $(event.relatedTarget)
+        var question_id = button.data('question_id')
+        var modal = $(this)
+        $.ajax({
+                type: 'POST',
+                url: '/cme_get_question_choices?question_id=' + question_id,
+                success: function(data) {
+                    modal.find('form #question_id').val(question_id)
+                    modal.find('form #edit_question').val(data.title)
+                    modal.find('form #edit_answer_explanation').val(data.answer_explanation)
+
+                    $.each(data.choices, function (i, e) {
+                        var checked = ''
+                        if (parseInt(data.answer) == parseInt(e.id)){
+                            checked = 'checked'
+                        }
+                        var choices_len = $('.choices').length + 1
+                        var choice = '<div class="radio choices">' +
+                            '  <label style="width: 100%">' +
+                            '    <input class="rd_btn" type="radio" name="question_radios" value="' + choices_len + '" ' + checked +'>' +
+                            '    <input class="form-control rd_txt" type="text" name="option' + choices_len + '" value="' +
+                              e.title      +'">' +
+                            '  </label>' +
+                            '</div>'
+                        $('.choices_cont').append(choice)
+                    })
+                },
+              });
+    })
+})
+
+function create_choice_cont() {
+    var choices_cont = document.createElement('div')
+    $(choices_cont).addClass('choices_cont')
+    $(choices_cont).css('margin-bottom', '4px')
+    var add_choice_btn = document.createElement('button')
+    $(add_choice_btn).addClass('btn btn-primary add_choice_btn')
+    $(add_choice_btn).attr('title', 'Add choices')
+    $(add_choice_btn).attr('type', 'button')
+    $(add_choice_btn).html(' <i class="fas fa-plus-square"></i> Add Choices')
+    var ans = "<span> Select the radio field of correct answer</span>"
+    $(choices_cont).append(add_choice_btn)
+    $(choices_cont).append(ans)
+
+    return choices_cont
+}
+</script>
+{% endblock %}

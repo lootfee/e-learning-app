@@ -1,0 +1,65 @@
+{% extends "cme_/cme_base.html" %}
+
+{% block cme_content %}
+<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+    <h3 class="text-center">Biogenix Learning Hub Courses</h3>
+    {% for course in open_courses %}
+    <div class="col-lg-4 col-md-4 col-sm-12 col-xs-12">
+        <div class="panel panel-info ">
+            <div class="panel-heading">
+                <img class="course_coverpage" src="{{ url_for('static', filename='cme/' + course.cover_page)  }}">
+            </div>
+            <div class="panel-body">
+                <strong>
+                    <a href="{{ url_for('cme_course_content', course_id=course.id, course_title=course.title, content_index=0) }}">
+                        <div>{{ course.title }}</div>
+                        <div>Course deadline: {{ course.deadline.strftime('%b %d, %Y') }}</div>
+                    </a>
+                </strong>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% if ended_courses %}
+<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+    <h3 class="text-center">Ended Courses</h3>
+    {% for course in ended_courses %}
+    <div class="col-lg-4 col-md-4 col-sm-12 col-xs-12">
+        <div class="panel panel-info ">
+            <div class="panel-heading">
+                <img class="course_coverpage" src="{{ url_for('static', filename='cme/' + course.cover_page)  }}">
+            </div>
+            <div class="panel-body">
+                <strong>
+                    <div>{{ course.title }}</div>
+                    <div>Course deadline: {{ course.deadline.strftime('%b %d, %Y') }}</div>
+                </strong>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if current_user.designation == 'Educational Lead' %}
+<div class="row">
+    <div class="col-lg-2 col-lg-offset-10 col-md-2 col-md-offset-10 col-sm-3 col-sm-offset-9 col-xs-3 col-xs-offset-9 create_course_cont">
+        <a class="btn btn-primary btn-lg" href="{{ url_for('cme_add_course') }}" title="Add course">
+            <i class="fas fa-book-medical"></i>
+        </a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<style>
+    .course_coverpage {
+        width: 100%;
+        height: 200px;
+    }
+</style>
+{% endblock %}

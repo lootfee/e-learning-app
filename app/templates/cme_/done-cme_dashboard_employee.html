@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% import 'bootstrap/wtf.html' as wtf %}
+
+{% block app_content %}
+<div class="row">
+    <div class="col-lg-2 col-md-2">
+        <a href="{{ url_for('cme_employees_summary', year=current_year) }}">
+            <span class="web-only">
+                <i class="fas fa-angle-double-left"></i>
+                Back to summary
+            </span>
+        </a>
+    </div>
+    <div class="col-lg-8 col-md-8">
+        <div class="text-center">
+            <h3>Employee Training and Development Tracking</h3>
+            <h4>Name: {{ user.name }}</h4>
+            <h4>Designation: {{ user.designation }}</h4>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-12 col-md-12">
+        <ul class="nav nav-tabs" role="tablist" style="margin-bottom: 5px;">
+            {% for year in years %}
+            <li class="year_list year_{{ year }}" style="font-size: 20px">
+                <a href="{{ url_for('cme_employee', year=year, user_id=user.id) }}" >{{ year }}</a>
+            </li>
+            {% endfor %}
+        </ul>
+        <table class="table table-bordered table-hover">
+            <thead>
+                <th>Course</th>
+                <th>Date started</th>
+                <th>Date finished</th>
+                <th>Pre-test</th>
+                <th>Post-test</th>
+                <th title="Change in Knowledge">CIK</th>
+            </thead>
+            <tbody>
+            {% for course in courses %}
+                <tr>
+                    <td>{{ course.title }}</td>
+                    <td>
+                        {% if course.submitted_pre_test(user) %}
+                            {{ course.submitted_pre_test(user).date_start.strftime('%b %d, %Y') }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if course.submitted_post_test(user) %}
+                            {{ course.submitted_post_test(user).date_start.strftime('%b %d, %Y') }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if course.submitted_pre_test(user) %}
+                            {{ course.submitted_pre_test(user).percent_score() }}%
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if course.submitted_post_test(user) %}
+                            {{ course.submitted_post_test(user).percent_score() }}%
+                            ({{ course.user_post_tests(user)|length }} takes)
+                        {% endif %}
+                    </td>
+                    <td>{% if course.submitted_pre_test(user) and course.submitted_post_test(user) %}
+                        {{ (((course.submitted_post_test(user).score - course.submitted_pre_test(user).score) / course.questions|length) * 100)|round|int }}%
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+$(document).ready(function () {
+    $('.year_{{ current_year }}').addClass('active')
+})
+</script>
+{% endblock %}

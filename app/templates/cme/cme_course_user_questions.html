@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block app_content %}
+    {% set side_nav_content = [] %}
+    {{ side_nav_content.append({'endpoint': url_for('cme_manage_courses'), 'name': 'Manage Courses', 'icon_class': 'fas fa-tasks'})|default("", True) }}
+    {{ side_nav_content.append({'endpoint': url_for('cme_add_course_content', token=course.get_id_token()), 'name': 'Back to Course', 'icon_class': 'fas fa-angle-double-left'})|default("", True) }}
+
+    {% include 'sidenav.html' %}
+
+    <div class="col-lg-10 col-lg-offset-2 col-md-10 col-md-offset-2 col-sm-12 col-xs-12" id="cme_content">
+        <h3 class="text-center">
+            {{ course.title }} Course Questions
+        </h3>
+        <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+            {% for question in course.user_questions %}
+            <div class="panel panel-info">
+                <div class="panel-heading">
+                    <div class="row">
+                        <div class="col-lg-9 col-md-9">
+                            Posted by: {{ question.questioned_by.name }}
+                        </div>
+                        <div class="col-lg-3 col-md-3">
+                            Date posted: {{ question.date_posted.strftime('%b %d, %Y') }}
+                        </div>
+                    </div>
+                </div>
+                <div class="panel-body">
+                    {{ question.question }}
+
+                    {% if question.answer %}
+                    <br>
+                    <h5>Answer:</h5>
+                    <p>{{ question.answer }}</p>
+                    <p>Answered by: {{ question.answered_by.name }} on {{ question.date_answered.strftime('%b %d, %Y') }}</p>
+                    {% endif %}
+
+                    <button class="btn btn-primary" data-toggle="modal" data-target="#answer_question_modal"
+                            data-question_id="{{ question.id }}" data-question="{{ question.question }}" style="float: right">
+                        Answer
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="answer_question_modal" tabindex="-1" role="dialog" aria-labelledby="answer_question_modal_label">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="answer_question_modal_label"></h4>
+            </div>
+            <div class="modal-body">
+            <div class="question_cont"></div>
+            {{ wtf.quick_form(form) }}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<style>
+ #course_content_nav {
+     position: fixed;
+     height: 100%;
+     border-right: 2px solid #6b6d72;
+     {#padding-top: 5%;#}
+     font-size: 20px;
+     font-weight: bold;
+ }
+
+
+@media (max-width: 768px){
+    #course_content_nav {
+        bottom: 0;
+        top: 90%;
+        padding: 10px 50px 0 0;
+        text-align: center;
+        font-size: 20px;
+    }
+
+}
+
+</style>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+$(document).ready(function () {
+    $("body").tooltip({ selector: '[data-toggle=tooltip]' });
+    $("body").popover({ selector: '[data-toggle=popover]' });
+
+    $('#answer_question_modal').on('show.bs.modal', function (event) {
+        var button = $(event.relatedTarget)
+        var question_id = button.data('question_id')
+        var question = button.data('question')
+        var modal = $(this)
+        modal.find('#answer_question_modal_label').text('')
+        modal.find('form #question_id').val('')
+        modal.find('#answer_question_modal_label').text(question)
+        modal.find('form #question_id').val(question_id)
+    })
+})
+</script>
+{% endblock %}

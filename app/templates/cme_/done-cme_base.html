@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% import 'bootstrap/wtf.html' as wtf %}
+
+{% block app_content %}
+<div class="container-fluid">
+    {% set side_nav_content = [{'endpoint': 'index', 'name': 'Updates', 'icon_class': 'fas fa-notes-medical'},
+                               {'endpoint': 'cme_my_certificates', 'name': 'Certificates', 'icon_class': 'fas fa-certificate'}]
+    %}
+    {% include 'sidenav.html' %}
+    {#<div class="col-lg-2 col-md-2 col-sm-12 col-xs-12" id="side_nav">
+        <div class="col-lg-12 col-md-12 col-sm-4 col-xs-4">
+            <a class="btn btn-primary btn-block" href="{{ url_for('index') }}">
+                <i class="fas fa-notes-medical"></i>
+                <span class="side_nav_label">
+                    Updates
+                </span>
+            </a>
+        </div>
+        <div class="col-lg-12 col-md-12 col-sm-4 col-xs-4">
+            <a class="btn btn-primary btn-block" href="{{ url_for('continuing_medical_education') }}">
+                <i class="fas fa-book-open"></i>
+                <span class="side_nav_label">
+                    Courses
+                </span>
+            </a>
+        </div>
+        <div class="col-lg-12 col-md-12 col-sm-4 col-xs-4">
+            <a class="btn btn-primary btn-block" href="{{ url_for('cme_my_certificates') }}">
+                <i class="fas fa-certificate"></i>
+                <span class="side_nav_label">
+                    Certificates
+                </span>
+            </a>
+        </div>
+        {% if current_user.designation == 'Educational Lead' or current_user.is_cme_course_creator() %}
+        <div class="col-lg-12 col-md-12 col-sm-6 col-xs-6" id="admin_panel">
+            <h3><i class="fas fa-user-shield"></i> Admin</h3>
+            {% if current_user.designation == 'Educational Lead' %}
+            <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                <a href="{{ url_for('cme_dashboards') }}">
+                    <i class="far fa-chart-bar"></i>
+                    <span class="cme_admin_label">
+                        Dashboards
+                    </span>
+                </a>
+            </div>
+            <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                <a href="{{ url_for('cme_add_course') }}">
+                    <i class="fas fa-book-medical"></i>
+                    <span class="cme_admin_label">
+                        Add Course
+                    </span>
+                </a>
+            </div>
+            {% endif %}
+            <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                <a href="{{ url_for('cme_draft_courses') }}">
+                    <i class="fas fa-tasks"></i>
+                    <span class="cme_admin_label">
+                        Manage Courses
+                    </span>
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>#}
+    <div class="col-lg-10 col-lg-offset-2 col-md-10 col-md-offset-2 col-sm-12 col-xs-12" id="cme_content">
+        {% block cme_content %}
+
+        {% endblock %}
+    </div>
+</div>
+
+{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<style>
+
+ #admin_panel {
+     margin-top: 40px;
+ }
+
+@media (max-width: 1300px){
+
+}
+
+@media (max-width: 1023px) and (max-height: 500px) {
+
+}
+
+@media (max-width: 550px) {
+    {#.side_nav_label {
+        display: none;
+    }#}
+    {##side_nav a {
+        font-size: 20px;
+    }#}
+}
+
+</style>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+$(document).ready(function () {
+    $("body").tooltip({ selector: '[data-toggle=tooltip]' });
+    $("body").popover({ selector: '[data-toggle=popover]' });
+})
+</script>
+{% endblock %}

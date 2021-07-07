@@ -1,0 +1,281 @@
+{% extends "base.html" %}
+{% import 'bootstrap/wtf.html' as wtf %}
+
+{% block app_content %}
+<div class="container-fluid">
+    <div class="col-lg-2 col-md-2 col-sm-12 col-xs-12" id="course_content_nav">
+        <div class="col-lg-12 col-md-12 col-sm-6 col-xs-6" id="admin_panel">
+            <h4>
+                <a href="{{ url_for('cme_add_course_content', course_id=content.course.id) }}">
+                    << {{ content.course.title }}
+                </a>
+            </h4>
+            <h4>
+                {{ content.title }}
+                {% if content.course.published == False %}
+                <a title="Add slides" class="btn btn-primary btn-sm" style="padding: 3px;"
+                   data-toggle="modal" data-target="#add_slide_modal">
+                    <i class="fas fa-plus-square"></i>
+                </a>
+                {% endif %}
+            </h4>
+        </div>
+        <div class="col-lg-12 col-md-12 col-sm-6 col-xs-6">
+            {% if content.slides %}
+            <ol>
+                {% for slide in content.slides %}
+                <li>
+                    <div>
+                        <span class="edit_slide">
+                            Slide {{ slide.index }}
+                        </span>
+                        {% if content.course.published == False %}
+                        <button class="btn btn-danger btn-sm" type="button"
+                                data-toggle="popover" data-container="body"
+                                data-html="true" title="Delete Slide?"
+                                data-content="<p>Are you sure you want to delete Slide {{ slide.index }}?</p>
+                                <a class='btn btn-danger btn-sm'
+                                href='{{ url_for('cme_delete_content_slide', slide_id=slide.course_content_id) }}'>
+                                <i class='fas fa-trash-alt'></i> Delete</a>"
+                                style="float: right; padding: 2px;">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                        <button title="Edit slide" class="btn btn-primary btn-sm" data-toggle="modal"
+                                data-target="#edit_slide_modal" data-index="{{ slide.index }}"
+                                data-slide_text="{{ slide.slide_text }}" data-slide_id="{{ slide.id }}"
+                                style="float: right; padding: 2px; margin-right: 2px;">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                    {% endif %}
+                    </div>
+                </li>
+                {% endfor %}
+            </ol>
+            {% endif %}
+        </div>
+
+    </div>
+    <div class="col-lg-10 col-lg-offset-2 col-md-10 col-md-offset-2 col-sm-12 col-xs-12" id="cme_content">
+
+        <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+            <div class="col-lg-10 col-lg-offset-1 col-md-10 col-md-offset-1 col-sm-12 col-xs-12">
+                {% if content.slides %}
+                    <div id="content_{{ content.id }}" class="carousel slide" data-ride="carousel">
+                        <!-- Indicators -->
+                        <ol class="carousel-indicators">
+                            {% for slide in content.slides %}
+                            <li data-target="#content_{{ content.id }}" data-slide-to="{{ slide.index }}" id="indicator_index_{{ slide.index }}"></li>
+                            {% endfor %}
+                        </ol>
+
+                        {% set video = namespace(file=False) %}
+                        <!-- Wrapper for slides -->
+                        <div class="carousel-inner" role="listbox" style="height: 600px;">
+                            {% for slide in content.slides %}
+                            <div class="item" id="item_index_{{ slide.index }}">
+                                {% if slide.image_file %}
+                                <img src="{{ url_for('static', filename='cme_/' + slide.image_file) }}" style="height: 600px;">
+                                <div class="carousel-caption">
+                                    <audio id="audio_{{ slide.id }}" controls>
+                                      <source src="{{ url_for('static', filename='cme_/' + slide.sound_file) }}" type="audio/mpeg">
+                                    </audio>
+                                </div>
+                                {% else %}
+                                {% set video.file = True %}
+                                <div class="text-center">
+                                    <video width="320" height="240" controls>
+                                        <source src="{{ url_for('static', filename='cme_/' + slide.sound_file) }}" type="video/mp4">
+                                    </video>
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                    <!-- Controls -->
+                        {% if video.file == False %}
+                        <a class="left carousel-control" href="#content_{{ content.id }}" role="button" data-slide="prev">
+                            <span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span>
+                            <span class="sr-only">Previous</span>
+                        </a>
+                        <a class="right carousel-control" href="#content_{{ content.id }}" role="button" data-slide="next">
+                            <span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span>
+                            <span class="sr-only">Next</span>
+                        </a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="add_slide_modal" tabindex="-1" role="dialog" aria-labelledby="add_slide_modal_Label">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="add_slide_modal_Label">
+                    Add Slide
+                    <button class="btn btn-primary" data-toggle="modal" data-target="#upload_video_modal">
+                        Upload video instead?
+                    </button>
+                </h4>
+            </div>
+            <div class="modal-body">
+            {{ wtf.quick_form(form) }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="edit_slide_modal" tabindex="-1" role="dialog" aria-labelledby="edit_slide_modal_Label">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="edit_slide_modal_Label">Edit Slide</h4>
+            </div>
+            <div class="modal-body">
+            {{ wtf.quick_form(edit_form) }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="upload_video_modal" tabindex="-1" role="dialog" aria-labelledby="upload_video_modal_Label">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="upload_video_modal_Label">Upload Video</h4>
+            </div>
+            <div class="modal-body">
+            {{ wtf.quick_form(video_form) }}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<style>
+    #course_content_nav {
+     position: fixed;
+     height: 100%;
+     border-right: 2px solid #6b6d72;
+     {#padding-top: 5%;#}
+     font-size: 20px;
+     font-weight: bold;
+    }
+
+    .carousel-inner {
+     height: 600px;
+    }
+
+    .item-img {
+     height: 600px;
+    }
+
+    .web-only {
+        display: block;
+    }
+    .mobile-only {
+        display: none;
+    }
+
+    audio {
+     opacity: 0.15;
+    }
+
+    audio:hover {
+     opacity: 1;
+    }
+
+    video {
+     width: 100%;
+     height: 600px;
+    }
+
+
+@media (max-width: 768px){
+    #course_content_nav {
+        bottom: 0;
+        top: 90%;
+        padding: 10px 50px 0 0;
+        text-align: center;
+        font-size: 20px;
+    }
+
+    .web-only {
+        display: none;
+    }
+    .mobile-only {
+        display: block;
+    }
+
+    .carousel-inner {
+        height: 80vh;
+     }
+
+    .item-img {
+        height: 80vh !important;
+    }
+
+    .title_page_img {
+        height: 80vh
+    }
+
+    video {
+        width: 100%;
+        height: 80vh;
+    }
+
+}
+
+</style>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+$(document).ready(function () {
+    $("body").tooltip({ selector: '[data-toggle=tooltip]' });
+    $("body").popover({ selector: '[data-toggle=popover]' });
+
+
+    $('#indicator_index_1').addClass('active')
+    $('#item_index_1').addClass('active')
+
+    $('.carousel').carousel({
+        interval: false,
+        wrap: false
+    })
+
+    $('#edit_slide_modal').on('show.bs.modal', function (event) {
+        var button = $(event.relatedTarget)
+        var index = button.data('index')
+        var slide_id = button.data('slide_id')
+        var slide_text = button.data('slide_text')
+        var modal = $(this)
+        modal.find('form #slide_id').val(slide_id)
+        modal.find('form #edit_index').val(index)
+        modal.find('form #edit_slide_text').val(slide_text)
+    })
+
+    $('#upload_video_modal').on('show.bs.modal', function (event) {
+        $('#add_slide_modal').modal('hide')
+    })
+
+    {#$('#content_{{ content.id }}').on('slide.bs.carousel', function () {
+        var active_item = $('.item.active .carousel-caption audio')[0]
+
+        console.log(active_item)
+        active_item.play();
+        //console.log($('.item.active .carousel-caption audio'))
+    })#}
+})
+</script>
+{% endblock %}

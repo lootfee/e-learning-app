@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+{% import 'bootstrap/wtf.html' as wtf %}
+
+{% block app_content %}
+<div class="container-fluid">
+    <div class="col-lg-2 col-md-2 col-sm-12 col-xs-12" id="course_content_nav">
+        <div class="col-lg-12 col-md-12 col-sm-6 col-xs-6" id="admin_panel">
+            <h4>
+                <a href="{{ url_for('cme_add_course_content', course_id=course.id) }}">
+                    << {{ course.title }}
+                </a>
+            </h4>
+            <h3>
+                Course Contents
+                {% if course.published == False %}
+                <a title="Add content" class="btn btn-primary btn-sm" style="padding: 3px;"
+                   data-toggle="modal" data-target="#add_content_modal">
+                    <i class="fas fa-plus-square"></i>
+                </a>
+                {% endif %}
+            </h3>
+        </div>
+        {#<div class="col-lg-12 col-md-12 col-sm-6 col-xs-6">
+            {% if course.contents %}
+            <ol>
+                {% for content in course.contents|sort(attribute='index') %}
+                <li>
+                    <div style="display: inline-flex; width: 70%">
+                        <a href="{{ url_for('cme_add_course_content_slides', content_id=content.id) }}">
+                            {{ content.title }}
+                        </a>
+                    </div>
+                    <div style="display: inline-block;">
+                        {% if course.published == False %}
+                        <button class="btn btn-danger btn-sm" type="button"
+                                data-toggle="popover" data-container="body"
+                                data-html="true" title="Delete Content?"
+                                data-content="<p>Are you sure you want to delete {{ content.title }}?</p>
+                                <a class='btn btn-danger btn-sm'
+                                href='{{ url_for('cme_delete_course_content', content_id=content.id) }}'>
+                                <i class='fas fa-trash-alt'></i> Delete</a>"
+                                style="float: right; padding: 2px;">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                        <button title="Edit content" class="btn btn-primary btn-sm" data-toggle="modal"
+                                data-target="#edit_content_modal" data-content_id="{{ content.id }}"
+                                data-content_title="{{ content.title }}" data-content_index="{{ content.index }}"
+                                style="float: right; padding: 2px; margin-right: 2px;">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        {% endif %}
+                    </div>
+                </li>
+                {% endfor %}
+            </ol>
+            {% endif %}
+        </div>#}
+        {#<div class="col-lg-12 col-md-12 col-sm-6 col-xs-6" style="position: fixed; bottom: 0; margin-bottom: 10px; left: 10px;">
+            {% if course.published == False %}
+            <a class="btn btn-primary" href="{{ url_for('cme_manage_exam', course_id=course.id, course_title=course.title) }}">
+                Manage Exam
+            </a>
+            <button class="btn btn-primary"
+                    data-toggle="popover" data-container="body" title="Publish Course"
+                    data-html="true" data-content="<h4>Are you sure you want to publish this course?</h4>
+                    <a class='btn btn-primary' href='{{ url_for('cme_publish_course', course_id=course.id) }}'>
+                    <i class='fas fa-book-reader'></i> Publish
+                    </a>">
+                <i class="fas fa-book-reader"></i>
+                    Publish
+            </button>
+            {% elif course.published == True %}
+            <button class="btn btn-warning"
+                    data-toggle="popover" data-container="body" title="Unpublish Course"
+                    data-html="true" data-content="<h4>Are you sure you want to unpublish this course?</h4>
+                    <a class='btn btn-warning' href='{{ url_for('cme_publish_course', course_id=course.id) }}'>
+                    <i class='fas fa-book-dead'></i> Unpublish
+                    </a>">
+                <i class="fas fa-book-dead"></i>
+                    Unpublish
+            </button>
+            <button class="btn btn-primary" href=""  style="padding: 6px 10px">
+                <i class="fas fa-question-circle"></i>
+                 Posted questions
+            </button>
+            {% endif %}
+        </div>#}
+    </div>
+    <div class="col-lg-10 col-lg-offset-2 col-md-10 col-md-offset-2 col-sm-12 col-xs-12" id="cme_content">
+        <div class="col-lg-12 col-md-12">
+            <h2 class="text-center">
+                {{ course.title }} Course Questions
+            </h2>
+        </div>
+        <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+            {% for question in course.user_questions %}
+            <div class="panel panel-info">
+                <div class="panel-heading">
+                    <div class="row">
+                        <div class="col-lg-9 col-md-9">
+                            Posted by: {{ question.questioned_by.name }}
+                        </div>
+                        <div class="col-lg-3 col-md-3">
+                            Date posted: {{ question.date_posted.strftime('%b %d, %Y') }}
+                        </div>
+                    </div>
+                </div>
+                <div class="panel-body">
+                    {{ question.question }}
+
+                    {% if question.answer %}
+                    <br>
+                    <h5>Answer:</h5>
+                    <p>{{ question.answer }}</p>
+                    <p>Answered by: {{ question.answered_by.name }} on {{ question.date_answered.strftime('%b %d, %Y') }}</p>
+                    {% endif %}
+
+                    <button class="btn btn-primary" data-toggle="modal" data-target="#answer_question_modal"
+                            data-question_id="{{ question.id }}" data-question="{{ question.question }}" style="float: right">
+                        Answer
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="answer_question_modal" tabindex="-1" role="dialog" aria-labelledby="answer_question_modal_label">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="answer_question_modal_label"></h4>
+            </div>
+            <div class="modal-body">
+            <div class="question_cont"></div>
+            {{ wtf.quick_form(form) }}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<style>
+ #course_content_nav {
+     position: fixed;
+     height: 100%;
+     border-right: 2px solid #6b6d72;
+     {#padding-top: 5%;#}
+     font-size: 20px;
+     font-weight: bold;
+ }
+
+
+@media (max-width: 768px){
+    #course_content_nav {
+        bottom: 0;
+        top: 90%;
+        padding: 10px 50px 0 0;
+        text-align: center;
+        font-size: 20px;
+    }
+
+}
+
+</style>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+$(document).ready(function () {
+    $("body").tooltip({ selector: '[data-toggle=tooltip]' });
+    $("body").popover({ selector: '[data-toggle=popover]' });
+
+    $('#answer_question_modal').on('show.bs.modal', function (event) {
+        var button = $(event.relatedTarget)
+        var question_id = button.data('question_id')
+        var question = button.data('question')
+        var modal = $(this)
+        modal.find('#answer_question_modal_label').text('')
+        modal.find('form #question_id').val('')
+        modal.find('#answer_question_modal_label').text(question)
+        modal.find('form #question_id').val(question_id)
+    })
+})
+</script>
+{% endblock %}

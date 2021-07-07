@@ -1,0 +1,81 @@
+{% extends "cme_/cme_dashboards_base.html" %}
+
+{% block dashboard_content %}
+<div class="text-center">
+    <h3>{{ current_year }} Training and Development Annual Plan</h3>
+</div>
+<div>
+    <ul class="nav nav-tabs" role="tablist">
+        {% for year in years %}
+        <li class="year_list year_{{ year }}" style="font-size: 20px">
+            <a href="{{ url_for('cme_dashboard_annual_plan', year=year) }}" >{{ year }}</a>
+        </li>
+        {% endfor %}
+    </ul>
+
+    <table class="table table-bordered table-hover">
+        <thead>
+            <th>Categories</th>
+            {% for m in months %}
+                <th class="month_{{ year }}_{{ m.id }}">
+                    <a href="{#{{ url_for('cme_dashboards_courses', year=current_year, month=m.id) }}#}">{{ m.name }}</a>
+                </th>
+            {% endfor %}
+        </thead>
+        <tbody>
+            {% for t in topics %}
+            <tr>
+                <td>{{ t.name }}</td>
+                {% for m in months %}
+                <td>{{ t.course_count(current_year, m.id) if t.course_count(current_year, m.id) != 0 }}</td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{#<div>#}
+{#    <ul class="nav nav-tabs" role="tablist">#}
+{#        {% for year in years %}#}
+{#        <li role="presentation" class="year_list year_{{ year }}" style="font-size: 20px">#}
+{#            <a href="#year_{{ year }}" aria-controls="year_{{ year }}" role="tab" data-toggle="tab">{{ year }}</a>#}
+{#        </li>#}
+{#        {% endfor %}#}
+{#    </ul>#}
+{#    <div class="tab-content">#}
+{#        {% for year in years %}#}
+{#        <div role="tabpanel" class="tab-pane" id="year_{{ year }}" data-year="year_{{ year }}">#}
+{#            <div class="btn-group btn-group-lg" role="group">#}
+{#                {% for m in months %}#}
+{#                    <a class="btn btn-default" data-month="month_{{ year }}_{{ m.id }}" href="{{ url_for('cme_dashboards_courses', year=year, month=m.id) }}">{{ m.name }}</a>#}
+{#                {% endfor %}#}
+                {#<a class="btn btn-default" data-month="month_2" href="{{ url_for('mgisp960_maintenance_summary', year=year, month='2') }}">Feb</a>
+{#                <a class="btn btn-default" data-month="month_3" href="{{ url_for('mgisp960_maintenance_summary', year=year, month='3') }}">Mar</a>#}
+{#                <a class="btn btn-default" data-month="month_4" href="{{ url_for('mgisp960_maintenance_summary', year=year, month='4') }}">Apr</a>#}
+{#                <a class="btn btn-default" data-month="month_5" href="{{ url_for('mgisp960_maintenance_summary', year=year, month='5') }}">May</a>#}
+{#                <a class="btn btn-default" data-month="month_6" href="{{ url_for('mgisp960_maintenance_summary', year=year, month='6') }}">Jun</a>#}
+{#                <a class="btn btn-default" data-month="month_7" href="{{ url_for('mgisp960_maintenance_summary', year=year, month='7') }}">Jul</a>#}
+{#                <a class="btn btn-default" data-month="month_8" href="{{ url_for('mgisp960_maintenance_summary', year=year, month='8') }}">Aug</a>#}
+{#                <a class="btn btn-default" data-month="month_9" href="{{ url_for('mgisp960_maintenance_summary', year=year, month='9') }}">Sep</a>#}
+{#                <a class="btn btn-default" data-month="month_10" href="{{ url_for('mgisp960_maintenance_summary', year=year, month='10') }}">Oct</a>#}
+{#                <a class="btn btn-default" data-month="month_11" href="{{ url_for('mgisp960_maintenance_summary', year=year, month='11') }}">Nov</a>#}
+{#                <a class="btn btn-default" data-month="month_12" href="{{ url_for('mgisp960_maintenance_summary', year=year, month='12') }}">Dec</a>#}
+{#            </div>#}
+{#        </div>#}
+{#        {% endfor %}#}
+{#    </div>#}
+{#</div>#}
+{% endblock %}
+
+
+
+{% block scripts %}
+{{ super() }}
+<script>
+$(document).ready(function () {
+    $('.year_{{ current_year }}').addClass('active')
+    $('.month_{{ current_year }}_{{ current_month }}').addClass('active')
+})
+</script>
+{% endblock %}

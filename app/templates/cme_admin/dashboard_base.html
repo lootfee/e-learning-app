@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block app_content %}
+{% set side_nav_content = [] %}
+{{ side_nav_content.append({'endpoint': url_for('continuing_medical_education'), 'name': 'Back to courses', 'icon_class': 'fas fa-angle-double-left'})|default("", True) }}
+{{ side_nav_content.append({'endpoint': url_for('cme_courses_summary', year=datetime_now.year, month=datetime_now.month), 'name': 'Courses Summary', 'icon_class': 'fas fa-file-alt'})|default("", True) }}
+{{ side_nav_content.append({'endpoint': url_for('cme_dashboard_annual_plan', year=datetime_now.year), 'name': 'Annual Plan', 'icon_class': 'fas fa-calendar-alt'})|default("", True) }}
+{{ side_nav_content.append({'endpoint': url_for('cme_employees_summary', year=datetime_now.year), 'name': 'Employees Summary', 'icon_class': 'fas fa-users'})|default("", True) }}
+
+{% include 'sidenav.html' %}
+
+<div class="col-lg-10 col-lg-offset-2 col-md-10 col-md-offset-2 col-sm-12 col-xs-12" id="cme_content">
+    {% block dashboard_content %}
+
+    {% endblock %}
+</div>
+{#<div class="container-fluid">
+    <div class="col-lg-2 col-md-2 col-sm-12 col-xs-12" id="course_content_nav">
+        <div class="col-lg-12 col-md-12 col-sm-6 col-xs-6" id="admin_panel">
+            <h4>
+                <a href="{{ url_for('continuing_medical_education') }}">
+                    <span class="web-only">
+                        <i class="fas fa-angle-double-left"></i>
+                        Back to courses
+                    </span>
+                </a>
+            </h4>
+        </div>
+        <div class="col-lg-12 col-md-12 col-sm-6 col-xs-6">
+            <ul class="nav nav-pills nav-stacked web-only" role="tablist">
+                <li>
+                    <a href="{{ url_for('cme_courses_summary', year=datetime_now.year, month=datetime_now.month) }}">
+                        Courses
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('cme_dashboard_annual_plan', year=datetime_now.year) }}">
+                        Annual Plan
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('cme_employees_summary', year=datetime_now.year) }}">
+                        Employees
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('cme_dashboards_topics') }}">
+                        Topic Categories
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+</div>#}
+
+
+{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<style>
+ {##course_content_nav {
+     position: fixed;
+     height: 100%;
+     border-right: 2px solid #6b6d72;
+     #}{#padding-top: 5%;#}{#
+     font-size: 20px;
+     font-weight: bold;
+ }
+
+
+@media (max-width: 768px){
+    #course_content_nav {
+        bottom: 0;
+        top: 90%;
+        padding: 10px 50px 0 0;
+        text-align: center;
+        font-size: 20px;
+    }
+
+}#}
+
+.nav-tabs>li.active>a,
+.nav-tabs>li.active>a:focus,
+.nav-tabs>li.active>a:hover.nav-tabs>li.active>a,
+.nav-tabs>li.active>a:focus, .nav-tabs>li.active>a:hover {
+    background-color: #005aff;
+    color: white;
+}
+
+</style>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+$(document).ready(function () {
+
+})
+</script>
+{% endblock %}

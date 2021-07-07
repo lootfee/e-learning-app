@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% import 'bootstrap/wtf.html' as wtf %}
+
+{% block app_content %}
+<div class="container-fluid">
+    <div class="col-lg-6 col-lg-offset-3 col-md-6 col-md-offset-3 col-sm-12 col-xs-12">
+        <div class="text-center">
+            <h3>{{ pre_test.course.title }} Course Pre-test Exam Summary</h3>
+            <h3>Score: {{ pre_test.score }}/{{ pre_test.course.questions|length }}</h3>
+        </div>
+    </div>
+    {#<div class="col-lg-6 col-lg-offset-3 col-md-6 col-md-offset-3 col-sm-12 col-xs-12">
+        {% for q in pre_test.course.questions %}
+        <div class="panel panel-info">
+            <div class="panel-heading">
+                <h3 class="panel-title">{{ q.title }} ?</h3>
+            </div>
+            <div class="panel-body">
+                {% for choice in q.choices %}
+                <div class="radio">
+                <p {% if q.answer().id == choice.id and pre_test.has_response(q).selected_choice_id == choice.id %}
+                        style="background-color: #78bdf3"
+                        {% elif q.answer().id == choice.id and pre_test.has_response(q).selected_choice_id != choice.id %}
+                        style="background-color: #f5a4a4"
+                        {% endif %} >
+                    <label style="width: 100%">
+                        <input class="rd_btn" type="radio" name="question_{{ q.id }}_radios"
+                                {% if pre_test.has_response(q).selected_choice_id == choice.id %}
+                                checked
+                                {% endif %}
+                                value="{{ choice.id }}">
+                        <span>{{ choice.title }}</span>
+                    </label>
+                </p>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="panel-footer">
+                {{ q.answer_explanation }}
+            </div>
+        </div>
+        {% endfor %}
+    </div>#}
+    <div class="col-lg-6 col-lg-offset-3 col-md-6 col-md-offset-3 col-sm-12 col-xs-12">
+        <div class="text-center">
+            <a class="btn btn-primary" href="{{ url_for('cme_course_content', course_id=pre_test.course.id, course_title=pre_test.course.title, content_index=1) }}">
+                Continue to course
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

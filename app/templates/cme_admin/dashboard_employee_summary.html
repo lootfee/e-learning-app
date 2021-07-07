@@ -1,0 +1,59 @@
+{% extends "cme_admin/dashboard_base.html" %}
+
+{% block dashboard_content %}
+<div class="text-center">
+    <h3>Employees Training and Development Tracking Summary</h3>
+</div>
+<div>
+    <ul class="nav nav-tabs" role="tablist" style="margin-bottom: 5px;">
+        {% for year in years %}
+        <li class="year_list year_{{ year }}" style="font-size: 20px">
+            <a href="{{ url_for('cme_employees_summary', year=year) }}" >{{ year }}</a>
+        </li>
+        {% endfor %}
+    </ul>
+    <div class="table-responsive">
+    <table class="table table-bordered table-hover">
+        <thead>
+            <th>Name</th>
+            <th>Designation</th>
+            <th>Courses Taken</th>
+            <th>Pre-tests Avg</th>
+            <th>Post-tests Avg</th>
+            {#<th>CIK Avg</th>#}
+        </thead>
+        <tbody>
+            {% for u in users %}
+            <tr>
+                <td><a href="{{ url_for('cme_employee', token=u.get_id_token(), year=current_year) }}">{{ u.name }}</a></td>
+                <td>{{ u.designation.name }}</td>
+                <td>{{ u.post_scores|length }}/{{ courses|length }}</td>
+                {% if u.pre_avg != None and u.post_avg != None %}
+                <td>{{ u.pre_avg }}%</td>
+                <td>{{ u.post_avg }}%</td>
+                {#<td>{{ (((u.post_avg - u.pre_avg) / (courses|length)) * 100)|round|int }}%</td>#}
+                {% else %}
+                <td></td>
+                <td></td>
+                {#<td></td>#}
+                {% endif %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+$(document).ready(function () {
+    $('.year_{{ current_year }}').addClass('active')
+
+    $('.table').DataTable()
+
+})
+</script>
+{% endblock %}

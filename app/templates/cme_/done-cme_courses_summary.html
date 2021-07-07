@@ -1,0 +1,118 @@
+{% extends "cme_/cme_dashboards_base.html" %}
+
+{% block dashboard_content %}
+<div class="text-center">
+    <h3>{{ current_month_name }} {{ current_year }} Courses Summary</h3>
+</div>
+<div>
+    <ul class="nav nav-tabs" role="tablist">
+        {% for year in years %}
+        <li class="year_{{ year }}" style="font-size: 20px">
+            <a href="{{ url_for('cme_courses_summary', year=year, month=current_month) }}" >{{ year }}</a>
+        </li>
+        {% endfor %}
+    </ul>
+    <ul class="nav nav-tabs" role="tablist">
+    {% for m in months %}
+        <li class="month_{{ m.id }}" style="font-size: 20px">
+            <a href="{{ url_for('cme_courses_summary', year=current_year, month=m.id) }}" >{{ m.name }}</a>
+        </li>
+    {% endfor %}
+    </ul>
+    <table class="table table-bordered table-hover">
+        <thead>
+            <th>Date</th>
+            <th>Course</th>
+            <th>Creator</th>
+            <th>Category</th>
+            <th>Goal</th>
+            <th>Target</th>
+            <th>CME Hrs</th>
+            <th>CME Approved</th>
+            <th>CME Expiry</th>
+        </thead>
+        <tbody>
+            {% for c in courses %}
+            <tr>
+                <td>{{ c.deadline.strftime('%b %d, %Y') }}</td>
+                <td>
+                    {{ c.title }}
+                    <div style="display: inline-block; float: right;">
+                        <a class="btn btn-primary btn-sm" title="Consolidated report"
+                           href="{{ url_for('cme_consolidated_report', course_id=c.id) }}">
+                            <i class="fas fa-file-invoice"></i>
+                        </a>
+                        <a class="btn btn-primary btn-sm" title="Attendance record"
+                           href="{{ url_for('cme_attendance_record', course_id=c.id) }}">
+                            <i class="fas fa-users"></i>
+                        </a>
+                    </div>
+                </td>
+                <td>{% for u in c.creators %}<div>{{ u.name }}</div>{% endfor %}</td>
+                <td>{{ c.topic.name }}</td>
+                <td></td>
+                <td></td>
+                <td>{{ c.cme_points }}</td>
+                <td></td>
+                <td></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{#<div>#}
+{#    <ul class="nav nav-tabs" role="tablist">#}
+{#        {% for year in years %}#}
+{#        <li role="presentation" class="year_list year_{{ year }}" style="font-size: 20px">#}
+{#            <a href="#year_{{ year }}" aria-controls="year_{{ year }}" role="tab" data-toggle="tab">{{ year }}</a>#}
+{#        </li>#}
+{#        {% endfor %}#}
+{#    </ul>#}
+{#    <div class="tab-content">#}
+{#        {% for year in years %}#}
+{#        <div role="tabpanel" class="tab-pane" id="year_{{ year }}" data-year="year_{{ year }}">#}
+{#            <div class="btn-group btn-group-lg" role="group">#}
+{#                {% for m in months %}#}
+{#                    <a class="btn btn-default" data-month="month_{{ year }}_{{ m.id }}" href="{{ url_for('cme_dashboards_courses', year=year, month=m.id) }}">{{ m.name }}</a>#}
+{#                {% endfor %}#}
+                {#<a class="btn btn-default" data-month="month_2" href="{{ url_for('mgisp960_maintenance_summary', year=year, month='2') }}">Feb</a>
+{#                <a class="btn btn-default" data-month="month_3" href="{{ url_for('mgisp960_maintenance_summary', year=year, month='3') }}">Mar</a>#}
+{#                <a class="btn btn-default" data-month="month_4" href="{{ url_for('mgisp960_maintenance_summary', year=year, month='4') }}">Apr</a>#}
+{#                <a class="btn btn-default" data-month="month_5" href="{{ url_for('mgisp960_maintenance_summary', year=year, month='5') }}">May</a>#}
+{#                <a class="btn btn-default" data-month="month_6" href="{{ url_for('mgisp960_maintenance_summary', year=year, month='6') }}">Jun</a>#}
+{#                <a class="btn btn-default" data-month="month_7" href="{{ url_for('mgisp960_maintenance_summary', year=year, month='7') }}">Jul</a>#}
+{#                <a class="btn btn-default" data-month="month_8" href="{{ url_for('mgisp960_maintenance_summary', year=year, month='8') }}">Aug</a>#}
+{#                <a class="btn btn-default" data-month="month_9" href="{{ url_for('mgisp960_maintenance_summary', year=year, month='9') }}">Sep</a>#}
+{#                <a class="btn btn-default" data-month="month_10" href="{{ url_for('mgisp960_maintenance_summary', year=year, month='10') }}">Oct</a>#}
+{#                <a class="btn btn-default" data-month="month_11" href="{{ url_for('mgisp960_maintenance_summary', year=year, month='11') }}">Nov</a>#}
+{#                <a class="btn btn-default" data-month="month_12" href="{{ url_for('mgisp960_maintenance_summary', year=year, month='12') }}">Dec</a>#}
+{#            </div>#}
+{#        </div>#}
+{#        {% endfor %}#}
+{#    </div>#}
+{#</div>#}
+{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<style>
+.nav-tabs>li.active>a,
+.nav-tabs>li.active>a:focus,
+.nav-tabs>li.active>a:hover.nav-tabs>li.active>a,
+.nav-tabs>li.active>a:focus, .nav-tabs>li.active>a:hover {
+    background-color: #005aff;
+    color: white;
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+$(document).ready(function () {
+    $('.year_{{ current_year }}').addClass('active')
+    $('.month_{{ current_month }}').addClass('active')
+})
+</script>
+{% endblock %}

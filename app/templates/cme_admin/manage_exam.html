@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block app_content %}
+<div class="container-fluid">
+    {% set side_nav_content = [] %}
+    {{ side_nav_content.append({'endpoint': url_for('cme_add_course_content', token=course.get_id_token()), 'name': 'Back to Course', 'icon_class': 'fas fa-chevron-circle-left'})|default("", True) }}
+
+    {% if course.published == False %}
+    {{ side_nav_content.append({'modal': 'data-toggle=modal data-target=#add_question_modal', 'name': 'Add Question', 'icon_class': 'fas fa-plus-square'})|default("", True) }}
+    {% endif %}
+
+    {% if course.questions %}
+        {{ side_nav_content.append({'nav_title': 'Questions'})|default("", True) }}
+        {% for q in course.questions %}
+            {#{{ side_nav_content.append({'modal': 'data-toggle=modal data-target=#edit_question_modal data-question_id=' + q.get_id_token(), 'name': 'Question ' + loop.index|string, 'icon_class': 'fa fa-edit'})|default("", True) }}#}
+            {{ side_nav_content.append({'nav_with_button': {'main_endpoint': '#question_' + loop.index|string,
+                                                        'name': 'Question ' +  loop.index|string,
+                                                        'buttons': [
+                                                            {"class": "btn btn-danger btn-sm",
+                                                                "icon_class": "fas fa-trash-alt",
+                                                                "attributes" : {"data-toggle" : "popover",
+                                                                                "data-container": "body",
+                                                                                "data-html": "true",
+                                                                                "data-placement": "top",
+                                                                                "title": "Delete Question?",
+                                                                                "data-content": "<p>Are you sure you want to delete question " + loop.index|string + "?</p><a class='btn btn-danger btn-sm' href=" + url_for('delete_exam_question', token=q.get_id_token()) + "><i class=fas fa-trash-alt></i> Delete</a>"}
+                                                            },
+                                                            {"class": "btn btn-primary btn-sm",
+                                                                "icon_class": "fas fa-edit",
+                                                                "attributes": {"data-toggle" : "modal",
+                                                                                "data-target": "#edit_question_modal",
+                                                                                "data-question_id": q.get_id_token()}
+                                                            }
+                                                        ]}, })|default("", True) }}
+        {% endfor %}
+    {% endif %}
+
+    {% include 'sidenav.html' %}
+
+    <div class="col-lg-10 col-lg-offset-2 col-md-10 col-md-offset-2 col-sm-12 col-xs-12" id="cme_content">
+        <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+            <h3 class="text-center">
+                {{ course.title }} Course Exam
+            </h3>
+        </div>
+
+        <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+            <ol>
+                {% for q in course.questions %}
+                <li>
+                    {{ q.title }}
+                    <ol type="a">
+                        {% for c in q.choices %}
+                        <li>{{ c.title }} {% if c.answer == True %} - Selected answer {% endif %}</li>
+                        {% endfor %}
+                    </ol>
+                    Answer explanation: {{ q.answer_explanation }}
+                </li>
+                {% endfor %}
+            </ol>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="add_question_modal" tabindex="-1" role="dialog" aria-labelledby="add_question_modal_label">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="add_question_modal_label">Add Question</h4>
+            </div>
+            <div class="modal-body">
+            {{ wtf.quick_form(form) }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="edit_question_modal" tabindex="-1" role="dialog" aria-labelledby="edit_question_modal_label">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="edit_question_modal_label">Edit Question</h4>
+            </div>
+            <div class="modal-body">
+            {{ wtf.quick_form(edit_form) }}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+$(document).ready(function () {
+
+    $('#add_question_modal').on('show.bs.modal', function () {
+        $('.choices_cont').remove()
+        var choices_cont = create_choice_cont()
+        $(choices_cont).insertBefore($('#answer_explanation').parent())
+    })
+
+
+    $('#submit').prop('disabled', true)
+
+    $(document).on('click', '.add_choice_btn', function () {
+        $('#submit').prop('disabled', true)
+        var choices_len = $('.choices').length + 1
+        var choice = '<div class="radio choices">' +
+            '  <label style="width: 100%">' +
+            '    <input class="rd_btn" type="radio" name="question_radios" value="' + choices_len + '">' +
+            '    <input class="form-control rd_txt" type="text" class="form-control" name="option' + choices_len + '">' +
+            '  </label>' +
+            '</div>'
+        $('.choices_cont').append(choice)
+    })
+
+    $(document).on('change', '.rd_btn', function () {
+        var rd_txts = true
+        $.each($('.rd_txt'), function (i, e) {
+            if ($(e).val().length == 0){
+                rd_txts = false
+            }
+        })
+        if (this.checked && rd_txts == true){
+            $('#submit').prop('disabled', false)
+            $('#edit_submit').prop('disabled', false)
+        }
+        else {
+            $('#submit').prop('disabled', true)
+            $('#edit_submit').prop('disabled', true)
+        }
+    })
+
+    $('#edit_question_modal').on('show.bs.modal', function (event) {
+        $('#edit_submit').prop('disabled', true)
+        $('.choices_cont').remove()
+        var choices_cont = create_choice_cont()
+        $(choices_cont).insertBefore($('#edit_answer_explanation').parent())
+        var button = $(event.relatedTarget)
+        var question_id = button.data('question_id')
+        var modal = $(this)
+        $.ajax({
+                type: 'POST',
+                url: "{{ url_for('cme_get_question_choices', question_id='') }}" + question_id,//'learning_hub/cme_get_question_choices?question_id=' + question_id,
+                success: function(data) {
+                    modal.find('form #question_id').val(question_id)
+                    modal.find('form #edit_question').val(data.title)
+                    modal.find('form #edit_answer_explanation').val(data.answer_explanation)
+
+                    $.each(data.choices, function (i, e) {
+                        var checked = ''
+                        if (parseInt(data.answer) == parseInt(e.id)){
+                            checked = 'checked'
+                        }
+                        var choices_len = $('.choices').length + 1
+                        var choice = '<div class="radio choices">' +
+                            '  <label style="width: 100%">' +
+                            '    <input class="rd_btn" type="radio" name="question_radios" value="' + choices_len + '" ' + checked +'>' +
+                            '    <input class="form-control rd_txt" type="text" name="option' + choices_len + '" value="' +
+                              e.title      +'">' +
+                            '  </label>' +
+                            '</div>'
+                        $('.choices_cont').append(choice)
+                    })
+                },
+              });
+    })
+})
+
+function create_choice_cont() {
+    var choices_cont = document.createElement('div')
+    $(choices_cont).addClass('choices_cont')
+    $(choices_cont).css('margin-bottom', '4px')
+    var add_choice_btn = document.createElement('button')
+    $(add_choice_btn).addClass('btn btn-primary add_choice_btn')
+    $(add_choice_btn).attr('title', 'Add choices')
+    $(add_choice_btn).attr('type', 'button')
+    $(add_choice_btn).html(' <i class="fas fa-plus-square"></i> Add Choices')
+    var ans = "<span> Select the radio field of correct answer</span>"
+    $(choices_cont).append(add_choice_btn)
+    $(choices_cont).append(ans)
+
+    return choices_cont
+}
+</script>
+{% endblock %}

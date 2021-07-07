@@ -1,0 +1,506 @@
+{% extends 'bootstrap/base.html' %}
+{% import 'bootstrap/wtf.html' as wtf %}
+
+{% block title %}
+    {% if title %}
+    {{ title }} - Biogenix
+    {% else %}
+    Biogenix - Learning Hub
+    {% endif %}
+{% endblock %}
+
+{% block navbar %}
+<nav class="navbar navbar-primary navbar-fixed-top">
+  <div class="container">
+    <!-- Brand and toggle get grouped for better mobile display -->
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar_collapse" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="{{url_for('index')}}" style="padding:5px;">
+        <span><img alt="Brand" src="/static/transparent_logo.png" style="width:50px;"></span>
+        <span>BIOGENIX</span>
+      </a>
+    </div>
+
+    <!-- Collect the nav links, forms, and other content for toggling -->
+    <div class="collapse navbar-collapse" id="navbar_collapse">
+        {% if current_user.is_anonymous %}
+            <ul class="nav navbar-nav">
+                <li>
+                    <a href="{{ url_for('login') }}">
+                        Login
+                    </a>
+                </li>
+            </ul>
+        {% endif %}
+        {% if current_user.is_authenticated %}
+            {% if current_user.designation_id %}
+            {% if current_user.id == 1 or current_user.designation_id <= 3 or current_user.is_cme_course_creator() %}
+            <ul class="nav navbar-nav">
+                {% if current_user.designation_id == 1 or current_user.is_cme_course_creator() %}
+                <li>
+                    <a href="{{ url_for('cme_admin') }}">
+                        <i class="fas fa-user-shield"></i>
+                        Admin
+                    </a>
+                </li>
+                {% elif current_user.designation_id > 1 and current_user.designation_id <= 3 %}
+                <li>
+                    <a href="">
+                        <i class="fas fa-user-shield"></i>
+                        Admin
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+            {% endif %}
+            {% endif %}
+            <ul class="nav navbar-nav navbar-right">
+                <li>
+                    <a href="{{ url_for('edit_profile') }}" title="Edit profile">
+                        <i class="fas fa-user-circle"></i>
+                        {{ current_user.name}}
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('logout') }}" title="Log out">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Log out
+                    </a>
+                </li>
+            </ul>
+        {% endif %}
+    </div><!-- /.navbar-collapse -->
+  </div><!-- /.container-fluid -->
+</nav>
+{% endblock %}
+
+{% block content %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+    {% for category, message in messages %}
+    <div class="alert alert-dismissable fade-in {{ category }}" role="alert" style="text-align: center; z-index: 999; position: fixed; width: 100%;">
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+        {{ message }}
+    </div>
+    {% endfor %}
+{% endif %}
+{% endwith %}
+
+<div class="col-lg-12 col-md-12 col-sm-12">
+    <div id="loading_icon" {#class="text-center"#}>
+        <img src="/static/transparent_logo.png">
+    </div>
+</div>
+
+
+{% block app_content %}
+
+{% endblock %}
+
+{% if current_user.is_authenticated %}
+<div class="modal fade" id="request_push_notification_modal" tabindex="-1" role="dialog" aria-labelledby="request_push_notification_modal_label">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="request_push_notification_modal_label">Enable Notifications</h4>
+      </div>
+      <div class="modal-body">
+          <p>This app would like to request permission to show notifications on your device.</p>
+        <button class="btn btn-primary" id="enable_notification_btn">
+            <i class="fas fa-bell"></i>
+            Enable Notifications
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+
+{% block styles %}
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.13.1/css/all.css" integrity="sha384-xxzQGERXS00kBmZW/6qxqJPyxW3UR0BPsL4c8ILaIWXva5kFi7TxkIIaMiKtqV1Q" crossorigin="anonymous">
+<link rel="shortcut icon" href="{{ url_for('static', filename='transparent_logo.ico') }}">
+<link rel="icon" href="{{ url_for('static', filename='transparent_logo.ico') }}">
+<link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+<link rel="apple-touch-icon" sizes="180x180" href="static/transparent_logo-256.png">
+<link rel="apple-touch-startup-image" href="{{ url_for('static', filename='transparent_logo-256.png') }}" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
+<link rel="apple-touch-startup-image" href="{{ url_for('static', filename='transparent_logo-256.png') }}" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
+<link rel="apple-touch-startup-image" href="{{ url_for('static', filename='transparent_logo-256.png') }}" media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+<link rel="apple-touch-startup-image" href="{{ url_for('static', filename='transparent_logo-256.png') }}" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+<link rel="apple-touch-startup-image" href="{{ url_for('static', filename='transparent_logo-256.png') }}" media="(min-device-width: 768px) and (max-device-width: 1024px) and (-webkit-min-device-pixel-ratio: 2) and (orientation: portrait)">
+<link rel="apple-touch-startup-image" href="{{ url_for('static', filename='transparent_logo-256.png') }}" media="(min-device-width: 834px) and (max-device-width: 834px) and (-webkit-min-device-pixel-ratio: 2) and (orientation: portrait)">
+<link rel="apple-touch-startup-image" href="{{ url_for('static', filename='transparent_logo-256.png') }}" media="(min-device-width: 1024px) and (max-device-width: 1024px) and (-webkit-min-device-pixel-ratio: 2) and (orientation: portrait)">
+<meta name="apple-mobile-web-app-title" content="Messenger App">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+{{ super() }}
+<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+<style>
+body {
+    padding-top: 70px;
+    padding-bottom: 30px;
+}
+
+.modal-dialog {
+    margin-top: 20vh;
+}
+
+.alert {
+        position: fixed;
+        width: 98%;
+   }
+
+  .navbar {
+      border-radius: 1px;
+  }
+   .navbar-primary {
+		background-color: #002bff;//#00d0ff;
+   }
+
+   nav a {
+		color: #FFFFFF;
+   }
+
+
+   a.navbar-brand :hover {
+     color: black;
+   }
+
+   .navbar-brand:focus, .navbar-brand:hover {
+        text-decoration: underline;
+    }
+
+   .navbar-collapse > .navbar-nav > li > a:focus, .navbar-collapse > .navbar-nav > li > a:hover {
+    color: #101010;
+    background-color: #002bff;
+    text-decoration: underline;
+  }
+
+   .icon-bar {
+       border: 2px solid white;
+   }
+
+.btn-primary {
+    color: #fff;
+    background-color: #002bff;
+    border-color: #002bff;
+    margin: 2px;
+    }
+
+  .btn-primary:hover {
+    color: #000000;
+    background-color: #005aff;
+    border-color: #005aff;
+  }
+
+  .btn-primary.active, .btn-primary:active, .open>.dropdown-toggle.btn-primary {
+    color: #000000;
+    background-color: #005aff;
+    border-color: #005aff;
+    }
+
+  .btn-primary.focus, .btn-primary:focus {
+    color: #000000;
+    background-color: #005aff;
+    border-color: #005aff;
+    }
+
+    .btn-primary.active.focus, .btn-primary.active:focus, .btn-primary.active:hover, .btn-primary:active.focus, .btn-primary:active:focus, .btn-primary:active:hover, .open>.dropdown-toggle.btn-primary.focus, .open>.dropdown-toggle.btn-primary:focus, .open>.dropdown-toggle.btn-primary:hover {
+        color: #000000;
+        background-color: #005aff;
+        border-color: #005aff;
+    }
+
+    #loading_icon img {
+        position: fixed;
+        width: 10%;
+        margin-top: 10%;
+        left: 45%;
+        z-index: 9999;
+        /* -webkit-animation: breathing 1s ease-out infinite normal;
+        animation: breathing 1s ease-out infinite normal; */
+        animation-name: spin;
+        animation-duration: 3000ms;
+        animation-iteration-count: infinite;
+        animation-timing-function: linear;
+
+    }
+
+    @keyframes spin {
+        from {
+            transform:rotate(0deg);
+        }
+        to {
+            transform:rotate(360deg);
+        }
+    }
+
+    #side_nav {
+         position: fixed;
+         height: 100vh;
+         border-right: 2px solid #6b6d72;
+         {#padding-top: 5%;#}
+         font-weight: bold;
+         z-index: 1000;
+         overflow-y: hidden;
+     }
+
+    #side_nav_btn {
+        display: none;
+    }
+
+    {##side_nav a {
+        margin: 2px;
+    }#}
+
+    .create_course_cont {
+        position: fixed;
+        bottom: 10%;
+        right: 0;
+    }
+
+    .sm_btn {
+        padding: 2px;
+    }
+
+@media (max-width: 1023px){
+    #loading_icon img {
+        width: 20%;
+        left: 40%;
+    }
+
+    #side_nav {
+        bottom: 0;
+        left: 0;
+        top: 95vh;
+        height: 100vh;
+        {#padding: 10px 50px 0 0;#}
+        border-right: none;
+        text-align: center;
+        {#z-index: 10;#}
+        background: gainsboro;
+        border-radius: 95px 95px 0px 0px;
+        transition: 0.5s;
+        overflow-y: scroll;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    body {
+        padding-bottom: 10vh;
+    }
+
+    #side_nav_btn {
+        display: contents;
+    }
+
+    #side_nav_content {
+        margin-top: 40px;
+    }
+}
+
+@media (max-width: 1023px) and (max-height: 500px) {
+    {#body {
+        padding-bottom: 25vh;
+    }#}
+
+    {##side_nav {
+        top: 85vh;
+    }#}
+
+    #side_nav a {
+        font-size: 10px;
+    }
+
+    .create_course_cont {
+        position: fixed;
+        bottom: 15vh;
+        right: 0;
+    }
+}
+
+@media (max-width: 550px) {
+    #loading_icon img {
+        width: 40%;
+        left: 30%;
+    }
+
+    #side_nav {
+        top: 97vh;
+    }
+
+    #side_nav a {
+        font-size: 16px;
+    }
+
+}
+</style>
+{% endblock %}
+{% block scripts %}
+{#<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>#}
+<link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+{#<script type="text/javascript" src="{{ url_for('static', filename='push_notification.js') }}"></script>#}
+<script type="text/javascript" src="{{ url_for('static', filename='register-service-worker.js') }}"></script>
+<script type="text/javascript">
+    {% if current_user.is_authenticated %}
+    registerServiceWorker(
+        "{{ url_for('sw') }}",
+        "{{config['VAPID_PUBLIC_KEY']}}",
+        "{{ url_for('create_push_subscription') }}",
+        "{{ csrf_token() }}"
+    );
+    {% endif %}
+</script>
+{{ super() }}
+
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+<script>
+{#$.widget.bridge('uibutton', $.ui.button);#}
+{#$.widget.bridge('uitooltip', $.ui.tooltip);#}
+</script>
+<script>
+$(window).load(function() {
+    // Animate loader off screen
+    $("#loading_icon").fadeOut("fast");
+});
+window.onbeforeunload = beforeUnload;
+function beforeUnload() {
+    $("#loading_icon").css('display', 'block')
+}
+
+$(document).ready(function() {
+    var csrf_token = "{{ csrf_token() }}";
+    $.ajaxSetup({
+        beforeSend: function (xhr, settings) {
+            if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                xhr.setRequestHeader("X-CSRFToken", csrf_token);
+            }
+        }
+    });
+
+    $('input[type=submit]').removeClass('btn-default').addClass('btn-primary');
+    $("body").tooltip({ selector: '[data-toggle=tooltip]' });
+    $("body").popover({ selector: '[data-toggle=popover]' });
+
+    if (Notification.permission === 'default'){
+        $('#request_push_notification_modal').modal('show');
+    }
+
+});
+
+// side nav handling
+$('#side_nav_btn').click(function () {
+    if ($('#side_nav').hasClass('expanded')){
+        $('#side_nav').css('top', '')
+        $('#side_nav').css('height', '100vh')
+        $('#side_nav').removeClass('expanded').addClass('contracted')
+    }
+    else {
+        $('#side_nav').css('top', '50vh')
+        $('#side_nav').css('height', 'auto')
+        $('#side_nav').removeClass('contracted').addClass('expanded')
+    }
+
+})
+
+$(document).mouseup(function(e) {
+    var container = $("#side_nav");
+    // if the target of the click isn't the container nor a descendant of the container
+    if (!container.is(e.target) && container.has(e.target).length === 0)
+    {
+        $(container).css('top', '');
+        $(container).css('height', '100vh')
+    }
+});
+
+function requestNotificationPermission() {
+    function handlePermission(permission) {
+        // Whatever the user answers, we make sure Chrome stores the information
+        if (!('permission' in Notification)) {
+            Notification.permission = permission;
+        }
+        if ($('#request_push_notification_modal').hasClass('in')){
+            $('#request_push_notification_modal').modal('hide')
+        }
+        {#console.log(permission)#}
+    }
+
+    if (!"Notification" in window) {
+            console.log("This browser does not support notifications.");
+    } else {
+        if (checkNotificationPromise()) {
+            Notification.requestPermission()
+                .then((permission) => {
+                    handlePermission(permission);
+                    permissionNotification(permission);
+                })
+        } else {
+            Notification.requestPermission(function (permission) {
+                handlePermission(permission);
+                permissionNotification(permission);
+            });
+        }
+    }
+}
+
+function permissionNotification(permission) {
+    if (permission == 'granted') {
+        var title = 'Thank you! Device notifications are now enabled'
+        var options = {
+            body: 'You can also enable/disable the notifications by clicking the icon before ' +
+                '"{{ url_for('edit_profile', _external=True) }}" at the browser tab at the top.',
+            icon: 'static/transparent_logo.ico',
+        }
+        navigator.serviceWorker.getRegistration().then(function (reg) {
+            reg.showNotification(title, options);
+        });
+        if ($('#push_notification_btn')){
+
+            $('#push_notification_btn').removeClass()
+            $('#push_notification_btn').html('')
+            $('#push_notification_btn').addClass('btn btn-success')
+            $('#push_notification_btn').html('<i class="fas fa-bell"></i> Notifications Enabled')
+        }
+
+    } else if (permission == 'denied') {
+        alert('Device notifications disabled!')
+        if ($('#push_notification_btn')) {
+            $('#push_notification_btn').removeClass()
+            $('#push_notification_btn').html('')
+            $('#push_notification_btn').addClass('btn btn-warning')
+            $('#push_notification_btn').html('<i class="fas fa-bell"></i> Notifications Disabled')
+        }
+    }
+}
+
+if ('permissions' in Notification) {
+    const permission = Notification.permission
+    console.log(permission)
+    permission.onchange = function () {
+      permissionNotification(permission)
+    };
+}
+
+
+$('#enable_notification_btn').click(requestNotificationPermission)
+
+function checkNotificationPromise() {
+    try {
+      Notification.requestPermission().then();
+    } catch(e) {
+      return false;
+    }
+    return true;
+  }
+</script>
+{% endblock %}
+</body>
+</html>

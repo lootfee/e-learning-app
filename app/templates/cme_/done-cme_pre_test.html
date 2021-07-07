@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% import 'bootstrap/wtf.html' as wtf %}
+
+{% block app_content %}
+<div class="container-fluid">
+{% if question == None %}
+    <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+        <div class="text-center">
+            <h3>Welcome to {{ course.title }} Course Pre-test Exam</h3>
+            <p>Please select the best answer from each of the questions choices.</p>
+            <a class="btn btn-primary" href="{{ url_for('cme_take_pre_test', course_id=course.id, question_id=course.questions[0].id) }}">
+                Next <i class="fas fa-angle-double-right"></i>
+            </a>
+        </div>
+    </div>
+{% else %}
+    {% set answered = namespace(questions=0) %}
+    <div class="col-lg-6 col-lg-offset-3 col-md-6 col-md-offset-3 col-sm-12 col-xs-12">
+        <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+            <div class="panel panel-info">
+                <div class="panel-heading">
+                    <h3>{{ question.title }} ?</h3>
+                </div>
+                <form action="{{ url_for('submit_pretest_response', course_id=course.id, question_id=question.id) }}" method="post">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <div class="panel-body">
+                        <div class="radio">
+                            {% for choice in question.choices %}
+                            <p>
+                                <label style="width: 100%">
+                                    <input class="rd_btn" type="radio" name="question_radios"
+                                            {% if pre_test.has_response(question) %}
+                                            {% if pre_test.has_response(question).selected_choice_id == choice.id %}
+                                            checked
+                                            {% endif %}
+                                            {% endif %}
+                                            value="{{ choice.id }}">
+                                    <span>{{ choice.title }}</span>
+                                </label>
+                            </p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="panel-footer">
+                        <ul class="nav nav-pills" role="tablist" style="margin-left: 30px;">
+                            {#{% set list_loop = namespace(outer=0) %}
+                            {% set response = namespace(count=0) %}
+                            {% for q in pre_test.pre_test_response %}
+                                {% set response.count = list_loop.outer + 1 %}
+                                {% set list_loop.outer = list_loop.outer + 1 %}
+                                <li {% if question.id == q.question.id %}class="active"{% else %}{% endif %}>
+                                    <a class="btn btn-info"
+                                       href="{{ url_for('cme_take_pre_test', course_id=course.id, resp=q.id) }}"
+                                       style="margin-top: 4px;">
+                                        {{ loop.index }}
+                                    </a>
+                                </li>
+                            {% endfor %}
+                            {% for q in course.questions %}
+                                {% if not pre_test.has_response(q) %}
+                                {% set list_loop.outer = list_loop.outer + 1 %}
+                                <li {% if list_loop.outer == response.count + 1 %} class="active"{% endif %}>
+                                    <a class="btn btn-default" style="margin-top: 4px;"
+                                    {% if list_loop.outer == response.count + 1 %}
+                                       href="{{ url_for() }}"
+                                    {% else %}
+                                       disabled
+                                    {% endif %}>
+                                        {{ list_loop.outer }}
+                                    </a>
+                                </li>
+                                {% endif %}
+                            {% endfor %}#}
+
+                            {% for q in course.questions %}
+                                <li {% if q.id == question.id %} class="active" {% endif %}>
+                                    <a href="{{ url_for('cme_take_pre_test', course_id=course.id, question_id=q.id) }}"
+                                        {% if pre_test.has_response(q) %}
+                                        {% set answered.questions = answered.questions + 1 %}
+                                        class="btn btn-info"
+                                        {% else %}
+                                        class="btn btn-default"
+                                        {% endif %}
+                                       style="margin-top: 4px;">
+                                        {{ loop.index }}
+                                    </a>
+                                </li>
+                            {% endfor %}
+                            {% if answered.questions == course.questions|length %}
+                            <li style="float: right;">
+                                <button class="btn btn-primary" type="button" role="button" data-toggle="modal" data-target="#submit_pre_test_modal" style="margin-top: 4px;">
+                                    Submit
+                                </button>
+                            </li>
+                            {% else %}
+                            <li style="float: right;">
+                                <button id="submit" type="submit" role="button" class="btn btn-primary" style="margin-top: 4px;">
+                                    Next <i class="fas fa-angle-double-right"></i>
+                                </button>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
+
+{% if answered.questions == course.questions|length %}
+<div class="modal fade" id="submit_pre_test_modal" tabindex="-1" role="dialog" aria-labelledby="submit_pre_test_modal_label">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="submit_pre_test_modal_label">{{ course.title }} Pre-test</h4>
+            </div>
+            <div class="modal-body">
+                <h4>Are you sure you want to submit Pre-test for {{ course.title }}?</h4>
+            </div>
+            <div class="modal-footer">
+                <a type="button" class="btn btn-default" data-dismiss="modal">Close</a>
+                <a href="{{ url_for('submit_pretest', course_id=course.id) }}" class="btn btn-primary">Submit</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endif %}
+</div>
+{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<style>
+.test_nav {
+    position: fixed;
+    bottom: 20%;
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+$(document).ready(function () {
+    $('#submit').prop('disabled', true)
+    $(document).on('change', '.rd_btn', function () {
+        var rd_txts = true
+        $.each($('.rd_txt'), function (i, e) {
+            if ($(e).val().length == 0){
+                rd_txts = false
+            }
+        })
+        if (this.checked && rd_txts == true){
+            $('#submit').prop('disabled', false)
+            $('#edit_submit').prop('disabled', false)
+        }
+        else {
+            $('#submit').prop('disabled', true)
+            $('#edit_submit').prop('disabled', true)
+        }
+    })
+
+    {#{% if pre_test.has_response(question) %}
+        console.log({{pre_test.has_response(question).selected_choice_id}})
+        $('.rd_btn[value={{pre_test.has_response(question).selected_choice_id}}]').attr('checked', true)
+    {% endif %}#}
+})
+</script>
+{% endblock %}
