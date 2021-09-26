@@ -6,7 +6,7 @@ load_dotenv()
 
 class Config(object):
     SECRET_KEY = os.getenv('SECRET_KEY') or 'you-will-never-guess'
-    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')
+    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL').replace('postgres://', 'postgresql://') or os.getenv('DATABASE_URL')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     VAPID_PUBLIC_KEY = os.getenv('VAPID_PUBLIC_KEY')
     VAPID_PRIVATE_KEY = os.getenv('VAPID_PRIVATE_KEY')
