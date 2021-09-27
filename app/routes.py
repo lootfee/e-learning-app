@@ -105,8 +105,7 @@ def register_user_2fa(token):
         email_user(1, 'User registration', body)
         push_json = {"title": "User registration",
                      "body": f'{user.name} registered on the Training and Development app with email {user.email}.'}
-        # head_nurses = User.query.filter_by(designation_id=2).all()
-        # trigger_push_notifications_for_user_designation(push_json, head_nurses)
+
         trigger_push_notifications_for_bb_admins(push_json)
         flash("Thank you for registering. You may now be able to log into your account.", 'alert-info')
         return redirect(url_for('login'))
