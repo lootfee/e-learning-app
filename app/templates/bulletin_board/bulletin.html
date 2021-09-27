@@ -23,8 +23,8 @@
     </div>
     {% elif attachment.filetype == 'pdf' %}
     <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 text-center">
-        <object class="bulletin_attachment" name="pdf_frame" data="https://docs.google.com/viewer?url={{ url_for('static', filename=attachment.filepath) }}" type="text/pdf" >
-            <embed src="{{ url_for('static', filename=attachment.filepath) }}" id="embed_pdf">
+        <object class="bulletin_attachment_pdf" name="pdf_frame" data="{{ url_for('static', filename=attachment.filepath) }}" type="text/pdf" >
+            <embed src="https://docs.google.com/viewer?url={{ url_for('static', filename=attachment.filepath, _external=True) }}" id="embed_pdf">
         </object>
 {#        <iframe src="https://docs.google.com/viewer?url={{ url_for('static', filename=attachment.filepath) }}" class="pdf_attachment bulletin_attachment" frameborder="0"></iframe>#}
         <ul>
