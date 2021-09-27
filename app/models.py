@@ -158,13 +158,13 @@ class User(UserMixin, db.Model):
         return course_creator
 
     def is_cme_admin(self):
-        return self.roles.filter(user_roles.c.role_id == 1).count() > 0
+        return self.roles.filter(user_roles.c.role_id == 1).count() > 0 or current_user.id == 1
 
     def is_bb_admin(self):
-        return self.roles.filter(user_roles.c.role_id == 2).count() > 0
+        return self.roles.filter(user_roles.c.role_id == 2).count() > 0 or current_user.id == 1
 
     def is_admin(self):
-        return self.roles.filter(user_roles.c.role_id == 1 or user_roles.c.role_id == 2).count() > 0
+        return self.roles.filter(user_roles.c.role_id == 1 or user_roles.c.role_id == 2).count() > 0 or current_user.id == 1
 
     def departments_list(self):
         departments_list = []
