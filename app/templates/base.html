@@ -39,7 +39,7 @@
         {% endif %}
         {% if current_user.is_authenticated %}
             {% if current_user.designation_id %}
-            {% if current_user.id == 1 or current_user.designation_id <= 3 or current_user.is_cme_course_creator() %}
+            {% if current_user.is_bb_admin() or current_user.is_cme_course_creator() %}
             <ul class="nav navbar-nav">
                 {% if current_user.is_cme_course_creator() %}
                 <li>
