@@ -26,7 +26,7 @@
         {#<object class="bulletin_attachment" name="pdf_frame" data="{{ url_for('static', filename=attachment.filepath) }}" type="text/pdf" >
             <embed src="{{ url_for('static', filename=attachment.filepath) }}" id="embed_pdf">
         </object>#}
-        <iframe src="https://docs.google.com/viewer?url={{ url_for('static', filename=attachment.filepath) }}" class="pdf_attachment bulletin_attachment" frameborder="0"></iframe>
+        <iframe src="https://docs.google.com/viewer?url={{ url_for('static', filename=attachment.filepath) }}&embedded=true" width="100%" height="100%" style="width: 100%; height: 100%;" frameborder="0" scrolling="no" class="pdf_attachment bulletin_attachment"></iframe>
         <ul>
             <li><a class="atachment_pdf_title" href="{{ url_for('static', filename=attachment.filepath) }}">{{ attachment.filename }}</a></li>
         </ul>
