@@ -7,31 +7,6 @@
     %}
     {% include 'sidenav.html' %}
 
-    {#<div class="col-lg-2 col-md-2 col-sm-12 col-xs-12" id="side_nav">
-        <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
-            <button id="side_nav_btn">
-                <span class="glyphicon glyphicon-option-horizontal" aria-hidden="true"></span>
-            </button>
-        </div>
-        <div id="side_nav_content">
-            <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
-                <a class="btn btn-primary btn-block" href="{{ url_for('index') }}">
-                    <i class="fas fa-notes-medical"></i>
-                    <span class="side_nav_label">
-                        Updates
-                    </span>
-                </a>
-            </div>
-            <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
-                <a class="btn btn-primary btn-block" href="{{ url_for('continuing_medical_education') }}">
-                    <i class="fas fa-book-open"></i>
-                    <span class="side_nav_label">
-                        Courses
-                    </span>
-                </a>
-            </div>
-        </div>
-    </div>#}
     <div class="col-lg-10 col-lg-offset-2 col-md-10 col-md-offset-2 col-sm-12 col-xs-12" id="index_content">
         <div class="row">
             {% for course in nursing_courses %}
