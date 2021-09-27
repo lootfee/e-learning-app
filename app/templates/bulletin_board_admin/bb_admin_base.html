@@ -1,15 +1,24 @@
 {% extends "base.html" %}
 
 {% block app_content %}
-<div class="container-fluid no-padding-mobile">
+<div class="container-fluid">
     {% set side_nav_content = [{'endpoint': url_for('bulletin_board'), 'name': 'Bulletin Board', 'icon_class': 'fas fa-bullhorn'},
                                {'endpoint': url_for('continuing_medical_education'), 'name': 'Courses', 'icon_class': 'fas fa-book-open'},
-                               {'endpoint': url_for('cme_my_certificates'), 'name': 'Certificates', 'icon_class': 'fas fa-certificate'}]
+                               {'endpoint': url_for('bb_topics'), 'name': 'Topics', 'icon_class': 'fas fa-user-tag'},
+                               {'endpoint': url_for('designation'), 'name': 'Designations', 'icon_class': 'fas fa-user-tag'},
+                               {'endpoint': url_for('department'), 'name': 'Departments', 'icon_class': 'fas fa-user-tag'}]
+
     %}
+    {% if current_user.id == 1 %}
+        {{ side_nav_content.append({'endpoint': url_for('role'), 'name': 'Role', 'icon_class': 'fas fa-user-tag'})|default("", True) }}
+    {% endif %}
+    {% if current_user.id == 1 or current_user.is_bb_admin() %}
+    {{ side_nav_content.append({'endpoint': url_for('users'), 'name': 'Users', 'icon_class': 'fas fa-users'})|default("", True) }}
+    {% endif %}
     {% include 'sidenav.html' %}
 
     <div class="col-lg-10 col-lg-offset-2 col-md-10 col-md-offset-2 col-sm-12 col-xs-12" id="cme_content">
-        {% block cme_content %}
+        {% block bb_admin_content %}
 
         {% endblock %}
     </div>

@@ -5,7 +5,7 @@ from sqlalchemy import func
 
 from app import app
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, BooleanField, SubmitField, TextAreaField, SelectField, HiddenField
+from wtforms import StringField, PasswordField, BooleanField, SubmitField, TextAreaField, SelectField, HiddenField, IntegerField
 from wtforms.validators import DataRequired, InputRequired, ValidationError, Email, EqualTo
 from app.mycaptcha import gen_captcha
 
@@ -165,7 +165,7 @@ class ResetPasswordForm(FlaskForm):
             raise ValidationError('Password should have at least one special character!')
 
 
-user_designations = ['Nurse', 'Nursing Lead', 'Head Nurse', 'Educational Lead', 'Medical Technologist']
+# user_designations = ['Nurse', 'Nursing Lead', 'Head Nurse', 'Educational Lead', 'Medical Technologist']
 
 
 class EditProfileForm(FlaskForm):
@@ -187,7 +187,6 @@ class EditProfileForm(FlaskForm):
                 raise ValidationError('Email is already registered!')
 
 
-class AddNursingCourseForm(FlaskForm):
-    title = StringField('Title', validators=[InputRequired()])
-    body = TextAreaField('Content')
+class TwoFactorAuthForm(FlaskForm):
+    code = IntegerField('Enter code provided in confirmation email.')
     submit = SubmitField('Submit')

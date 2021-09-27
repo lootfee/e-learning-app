@@ -5,20 +5,12 @@ from sqlalchemy import extract
 from time import time as ttime
 
 from app import app, db, login
-from flask import jsonify
+from app.models import QueryWithSoftDelete, cme_course_creators, ActivityLog
+from flask import jsonify, flash
 from flask_login import UserMixin, current_user
 
 from datetime import datetime, timedelta
 
-#from app.models import User
-
-
-
-
-cme_course_creators = db.Table('cme_course_creators',
-    db.Column('user_id', db.Integer, db.ForeignKey('user.id')),
-    db.Column('cme_course_id', db.Integer, db.ForeignKey('cme_course.id')),
-)
 
 cme_content_views = db.Table('cme_content_views',
     db.Column('user_id', db.Integer, db.ForeignKey('user.id')),
@@ -26,9 +18,46 @@ cme_content_views = db.Table('cme_content_views',
 )
 
 
+cme_course_topic_logs = db.Table('cme_course_topic_logs',
+    db.Column('cme_course_topic_id', db.Integer, db.ForeignKey('cme_course_topic.id')),
+    db.Column('activity_log_id', db.Integer, db.ForeignKey('activity_log.id')),
+)
+
+
 class CmeCourseTopic(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(400))
+    deleted = db.Column(db.Boolean)
+    # log_id = db.Column(db.Integer, db.ForeignKey('activity_log.id'))
+    #
+    # log = db.relationship('ActivityLog', backref=db.backref('course_topic_logs'), lazy='joined')
+    logs = db.relationship(
+        'ActivityLog', secondary='cme_course_topic_logs',
+        backref=db.backref('cme_course_topic_logs', lazy='dynamic'), lazy='dynamic'
+    )
+
+    query_class = QueryWithSoftDelete
+
+    def get_id_token(self, expires_in=3600):
+        return jwt.encode(
+            {'id': self.id,
+             'user_id': current_user.id,
+             'exp': ttime() + expires_in},
+            app.config['SECRET_KEY'], algorithm='HS256')
+
+    @staticmethod
+    def verify_id_token(token):
+        try:
+            decode = jwt.decode(token, app.config['SECRET_KEY'],
+                            algorithms=['HS256'])
+            id = decode['id']
+            user_id = decode['user_id']
+            if current_user.id != user_id:
+                id = None
+        except:
+            return
+
+        return CmeCourseTopic.query.get(id)
 
     def course_count(self, year, month):
         course_count = CmeCourse.query.filter(
@@ -36,6 +65,12 @@ class CmeCourseTopic(db.Model):
             topic_id=self.id
         ).count()
         return course_count
+
+
+cme_course_logs = db.Table('cme_course_logs',
+    db.Column('cme_course_id', db.Integer, db.ForeignKey('cme_course.id')),
+    db.Column('activity_log_id', db.Integer, db.ForeignKey('activity_log.id')),
+)
 
 
 class CmeCourse(db.Model):
@@ -49,12 +84,21 @@ class CmeCourse(db.Model):
     presentation_date = db.Column(db.DateTime)
     deadline = db.Column(db.DateTime)
     topic_id = db.Column(db.Integer, db.ForeignKey('cme_course_topic.id'))
-
+    deleted = db.Column(db.Boolean)
+    # log_id = db.Column(db.Integer, db.ForeignKey('activity_log.id'))
+    #
+    # log = db.relationship('ActivityLog', backref=db.backref('course_logs'), lazy='joined')
     topic = db.relationship('CmeCourseTopic', backref=db.backref('courses'), lazy='joined')
     creators = db.relationship(
         'User', secondary='cme_course_creators',
         backref=db.backref('cme_course_creator', lazy='dynamic'), lazy='dynamic'
     )
+    logs = db.relationship(
+        'ActivityLog', secondary='cme_course_logs',
+        backref=db.backref('cme_course_logs', lazy='dynamic'), lazy='dynamic'
+    )
+
+    query_class = QueryWithSoftDelete
 
     def get_id_token(self, expires_in=3600):
         return jwt.encode(
@@ -77,7 +121,10 @@ class CmeCourse(db.Model):
         return CmeCourse.query.get(id)
 
     def is_creator(self, user):
-        return self.creators.filter(cme_course_creators.c.user_id == user.id).count() > 0
+        creator = self.creators.filter(cme_course_creators.c.user_id == user.id).count() > 0
+        if current_user.is_cme_admin():
+            creator = True
+        return creator
 
     def open_pre_test(self, current_user):
         pre_test = CmeCoursePreTest.query.filter(CmeCoursePreTest.date_start.isnot(None)).filter_by(user_id=current_user.id, course_id=self.id, date_end=None).first()
@@ -172,19 +219,33 @@ class CmeCourse(db.Model):
     #     return datetime.now() <= self.deadline
 
 
+cme_course_content_logs = db.Table('cme_course_content_logs',
+    db.Column('cme_course_content_id', db.Integer, db.ForeignKey('cme_course_content.id')),
+    db.Column('activity_log_id', db.Integer, db.ForeignKey('activity_log.id')),
+)
+
 
 class CmeCourseContent(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(400))
     index = db.Column(db.Integer)
     course_id = db.Column(db.Integer, db.ForeignKey('cme_course.id'))
-
+    deleted = db.Column(db.Boolean)
+    # log_id = db.Column(db.Integer, db.ForeignKey('activity_log.id'))
+    #
+    # log = db.relationship('ActivityLog', backref=db.backref('course_content_logs'), lazy='joined')
     course = db.relationship('CmeCourse', backref=db.backref('contents'), lazy='joined')
 
     viewers = db.relationship(
         'User', secondary='cme_content_views',
         backref=db.backref('cme_content_views', lazy='dynamic'), lazy='dynamic'
     )
+    logs = db.relationship(
+        'ActivityLog', secondary='cme_course_content_logs',
+        backref=db.backref('cme_course_content_logs', lazy='dynamic'), lazy='dynamic'
+    )
+
+    query_class = QueryWithSoftDelete
 
     def get_id_token(self, expires_in=3600):
         return jwt.encode(
@@ -208,6 +269,13 @@ class CmeCourseContent(db.Model):
         return self.viewers.filter(cme_content_views.c.user_id == user.id).count() > 0
 
 
+cme_content_slide_logs = db.Table('cme_content_slide_logs',
+    db.Column('cme_content_slides_id', db.Integer, db.ForeignKey('cme_content_slides.id')),
+    db.Column('activity_log_id', db.Integer, db.ForeignKey('activity_log.id')),
+)
+
+
+
 class CmeContentSlides(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     image_file = db.Column(db.String(256), index=True)
@@ -216,9 +284,18 @@ class CmeContentSlides(db.Model):
     index = db.Column(db.Integer)
     course_id = db.Column(db.Integer, db.ForeignKey('cme_course.id'))
     course_content_id = db.Column(db.Integer, db.ForeignKey('cme_course_content.id'))
-
+    deleted = db.Column(db.Boolean)
+    # log_id = db.Column(db.Integer, db.ForeignKey('activity_log.id'))
+    #
+    # log = db.relationship('ActivityLog', backref=db.backref('content_slide_logs'), lazy='joined')
     course = db.relationship('CmeCourse', backref=db.backref('slides'), lazy='joined')
     course_content = db.relationship('CmeCourseContent', backref=db.backref('slides'), lazy='joined')
+    logs = db.relationship(
+        'ActivityLog', secondary='cme_content_slide_logs',
+        backref=db.backref('cme_content_slide_logs', lazy='dynamic'), lazy='dynamic'
+    )
+
+    query_class = QueryWithSoftDelete
 
     def get_id_token(self, expires_in=3600):
         return jwt.encode(
@@ -240,14 +317,72 @@ class CmeContentSlides(db.Model):
         return CmeContentSlides.query.get(id)
 
 
+cme_content_video_logs = db.Table('cme_content_video_logs',
+    db.Column('cme_content_video_id', db.Integer, db.ForeignKey('cme_content_video.id')),
+    db.Column('activity_log_id', db.Integer, db.ForeignKey('activity_log.id')),
+)
+
+
+class CmeContentVideo(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    video_file = db.Column(db.String(256), index=True)
+    course_id = db.Column(db.Integer, db.ForeignKey('cme_course.id'))
+    course_content_id = db.Column(db.Integer, db.ForeignKey('cme_course_content.id'))
+    deleted = db.Column(db.Boolean)
+    # log_id = db.Column(db.Integer, db.ForeignKey('activity_log.id'))
+    #
+    # log = db.relationship('ActivityLog', backref=db.backref('content_video_logs'), lazy='joined')
+    course = db.relationship('CmeCourse', backref=db.backref('video'), lazy='joined')
+    course_content = db.relationship('CmeCourseContent', backref=db.backref('video', uselist=False), lazy='joined')
+    logs = db.relationship(
+        'ActivityLog', secondary='cme_content_video_logs',
+        backref=db.backref('cme_content_video_logs', lazy='dynamic'), lazy='dynamic'
+    )
+
+    query_class = QueryWithSoftDelete
+
+    def get_id_token(self, expires_in=3600):
+        return jwt.encode(
+            {'id': self.id, 'user_id': current_user.id, 'exp': ttime() + expires_in},
+            app.config['SECRET_KEY'], algorithm='HS256')
+
+    @staticmethod
+    def verify_id_token(token):
+        try:
+            decode = jwt.decode(token, app.config['SECRET_KEY'],
+                                algorithms=['HS256'])
+            id = decode['id']
+            user_id = decode['user_id']
+            if current_user.id != user_id:
+                id = None
+        except:
+            return
+        return CmeContentVideo.query.get(id)
+
+
+cme_course_question_logs = db.Table('cme_course_question_logs',
+    db.Column('cme_course_question_id', db.Integer, db.ForeignKey('cme_course_question.id')),
+    db.Column('activity_log_id', db.Integer, db.ForeignKey('activity_log.id')),
+)
+
+
 class CmeCourseQuestion(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(1000))
     answer_explanation = db.Column(db.String(1000))
     image_file = db.Column(db.String(256), index=True)
     course_id = db.Column(db.Integer, db.ForeignKey('cme_course.id'))
+    # log_id = db.Column(db.Integer, db.ForeignKey('activity_log.id'))
+    deleted = db.Column(db.Boolean)
 
+    # log = db.relationship('ActivityLog', backref=db.backref('course_question_logs'), lazy='joined')
     course = db.relationship('CmeCourse', backref=db.backref('questions'), lazy='joined')
+    logs = db.relationship(
+        'ActivityLog', secondary='cme_course_question_logs',
+        backref=db.backref('cme_course_question_logs', lazy='dynamic'), lazy='dynamic'
+    )
+
+    query_class = QueryWithSoftDelete
 
     def get_id_token(self, expires_in=3600):
         return jwt.encode(
@@ -273,15 +408,30 @@ class CmeCourseQuestion(db.Model):
                 return a
 
 
+cme_course_question_choices_logs = db.Table('cme_course_question_choices_logs',
+    db.Column('cme_course_question_choices_id', db.Integer, db.ForeignKey('cme_course_question_choices.id')),
+    db.Column('activity_log_id', db.Integer, db.ForeignKey('activity_log.id')),
+)
+
+
 class CmeCourseQuestionChoices(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(400))
     answer = db.Column(db.Boolean)
     question_id = db.Column(db.Integer, db.ForeignKey('cme_course_question.id'))
     course_id = db.Column(db.Integer, db.ForeignKey('cme_course.id'))
-
+    deleted = db.Column(db.Boolean)
+    # log_id = db.Column(db.Integer, db.ForeignKey('activity_log.id'))
+    #
+    # log = db.relationship('ActivityLog', backref=db.backref('course_question_choices_logs'), lazy='joined')
     question = db.relationship('CmeCourseQuestion', backref=db.backref('choices'), lazy='joined')
     course = db.relationship('CmeCourse', backref=db.backref('choices'), lazy='joined')
+    logs = db.relationship(
+        'ActivityLog', secondary='cme_course_question_choices_logs',
+        backref=db.backref('cme_course_question_choices_logs', lazy='dynamic'), lazy='dynamic'
+    )
+
+    query_class = QueryWithSoftDelete
 
     def get_id_token(self, expires_in=3600):
         return jwt.encode(
@@ -302,6 +452,12 @@ class CmeCourseQuestionChoices(db.Model):
         return CmeCourseQuestionChoices.query.get(id)
 
 
+cme_course_pre_test_logs = db.Table('cme_course_pre_test_logs',
+    db.Column('cme_course_pre_test_id', db.Integer, db.ForeignKey('cme_course_pre_test.id')),
+    db.Column('activity_log_id', db.Integer, db.ForeignKey('activity_log.id')),
+)
+
+
 class CmeCoursePreTest(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     date_start = db.Column(db.DateTime)
@@ -312,6 +468,10 @@ class CmeCoursePreTest(db.Model):
 
     course = db.relationship('CmeCourse', backref=db.backref('pre_tests'), lazy='joined')
     user = db.relationship('User', backref=db.backref('pre_tests'), lazy='joined')
+    logs = db.relationship(
+        'ActivityLog', secondary='cme_course_pre_test_logs',
+        backref=db.backref('cme_course_pre_test_logs', lazy='dynamic'), lazy='dynamic'
+    )
 
     def get_id_token(self, expires_in=3600):
         return jwt.encode(
@@ -345,6 +505,12 @@ class CmeCoursePreTest(db.Model):
         return percentage
 
 
+cme_course_pre_test_response_logs = db.Table('cme_course_pre_test_response_logs',
+    db.Column('cme_course_pre_test_response_id', db.Integer, db.ForeignKey('cme_course_pre_test_response.id')),
+    db.Column('activity_log_id', db.Integer, db.ForeignKey('activity_log.id')),
+)
+
+
 class CmeCoursePreTestResponse(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     pretest_id = db.Column(db.Integer, db.ForeignKey('cme_course_pre_test.id'))
@@ -358,6 +524,10 @@ class CmeCoursePreTestResponse(db.Model):
     selected_choice = db.relationship('CmeCourseQuestionChoices', backref=db.backref('pre_test_response'), lazy='joined')
     course = db.relationship('CmeCourse', backref=db.backref('pre_test_response'), lazy='joined')
     user = db.relationship('User', backref=db.backref('pre_test_response'), lazy='joined')
+    logs = db.relationship(
+        'ActivityLog', secondary='cme_course_pre_test_response_logs',
+        backref=db.backref('cme_course_pre_test_response_logs', lazy='dynamic'), lazy='dynamic'
+    )
 
     def get_id_token(self, expires_in=3600):
         return jwt.encode(
@@ -378,6 +548,12 @@ class CmeCoursePreTestResponse(db.Model):
         return CmeCoursePreTestResponse.query.get(id)
 
 
+cme_course_post_test_logs = db.Table('cme_course_post_test_logs',
+    db.Column('cme_course_post_test_id', db.Integer, db.ForeignKey('cme_course_post_test.id')),
+    db.Column('activity_log_id', db.Integer, db.ForeignKey('activity_log.id')),
+)
+
+
 class CmeCoursePostTest(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     date_start = db.Column(db.DateTime)
@@ -388,6 +564,10 @@ class CmeCoursePostTest(db.Model):
 
     course = db.relationship('CmeCourse', backref=db.backref('post_tests'), lazy='joined')
     user = db.relationship('User', backref=db.backref('post_tests'), lazy='joined')
+    logs = db.relationship(
+        'ActivityLog', secondary='cme_course_post_test_logs',
+        backref=db.backref('cme_course_post_test_logs', lazy='dynamic'), lazy='dynamic'
+    )
 
     def get_id_token(self, expires_in=3600):
         return jwt.encode(
@@ -426,6 +606,12 @@ class CmeCoursePostTest(db.Model):
         return percentage
 
 
+cme_course_post_test_response_logs = db.Table('cme_course_post_test_response_logs',
+    db.Column('cme_course_post_test_response_id', db.Integer, db.ForeignKey('cme_course_post_test_response.id')),
+    db.Column('activity_log_id', db.Integer, db.ForeignKey('activity_log.id')),
+)
+
+
 class CmeCoursePostTestResponse(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     posttest_id = db.Column(db.Integer, db.ForeignKey('cme_course_post_test.id'))
@@ -439,6 +625,10 @@ class CmeCoursePostTestResponse(db.Model):
     selected_choice = db.relationship('CmeCourseQuestionChoices', backref=db.backref('post_test_response'), lazy='joined')
     course = db.relationship('CmeCourse', backref=db.backref('post_test_response'), lazy='joined')
     user = db.relationship('User', backref=db.backref('post_test_response'), lazy='joined')
+    logs = db.relationship(
+        'ActivityLog', secondary='cme_course_post_test_response_logs',
+        backref=db.backref('cme_course_post_test_response_logs', lazy='dynamic'), lazy='dynamic'
+    )
 
     def get_id_token(self, expires_in=3600):
         return jwt.encode(
@@ -459,6 +649,12 @@ class CmeCoursePostTestResponse(db.Model):
         return CmeCoursePostTestResponse.query.get(id)
 
 
+cme_course_user_question_logs = db.Table('cme_course_user_question_logs',
+    db.Column('cme_course_user_question_id', db.Integer, db.ForeignKey('cme_course_user_question.id')),
+    db.Column('activity_log_id', db.Integer, db.ForeignKey('activity_log.id')),
+)
+
+
 class CmeCourseUserQuestion(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     question = db.Column(db.String(1000))
@@ -472,6 +668,10 @@ class CmeCourseUserQuestion(db.Model):
     course = db.relationship('CmeCourse', backref=db.backref('user_questions'), lazy='joined')
     questioned_by = db.relationship('User', foreign_keys='CmeCourseUserQuestion.questioned_by_id', backref=db.backref('course_user_questions'), lazy='joined')
     answered_by = db.relationship('User', foreign_keys='CmeCourseUserQuestion.answered_by_id', backref=db.backref('course_user_answers'), lazy='joined')
+    logs = db.relationship(
+        'ActivityLog', secondary='cme_course_user_question_logs',
+        backref=db.backref('cme_course_user_question_logs', lazy='dynamic'), lazy='dynamic'
+    )
 
     def get_id_token(self, expires_in=3600):
         return jwt.encode(
@@ -490,6 +690,12 @@ class CmeCourseUserQuestion(db.Model):
         except:
             return
         return CmeCourseUserQuestion.query.get(id)
+
+
+cme_course_review_logs = db.Table('cme_course_review_logs',
+    db.Column('cme_course_review_id', db.Integer, db.ForeignKey('cme_course_review.id')),
+    db.Column('activity_log_id', db.Integer, db.ForeignKey('activity_log.id')),
+)
 
 
 class CmeCourseReview(db.Model):
@@ -522,6 +728,10 @@ class CmeCourseReview(db.Model):
 
     course = db.relationship('CmeCourse', backref=db.backref('user_reviews'), lazy='joined')
     user = db.relationship('User', backref=db.backref('course_reviews'), lazy='joined')
+    logs = db.relationship(
+        'ActivityLog', secondary='cme_course_review_logs',
+        backref=db.backref('cme_course_review_logs', lazy='dynamic'), lazy='dynamic'
+    )
 
     def get_id_token(self, expires_in=3600):
         return jwt.encode(

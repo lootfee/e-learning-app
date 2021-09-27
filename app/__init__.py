@@ -44,4 +44,6 @@ if not app.debug:
         app.logger.addHandler(mail_handler)
 
 
-from app import web_push_handler, routes, models, forms, cme_routes, cme_admin_routes, cme_forms, cme_models, admin_routes, admin_forms
+from app import web_push_handler, routes, models, forms, \
+    cme_routes, cme_admin_routes, cme_forms, cme_models,\
+    bb_admin_routes, bb_routes, bb_models, bb_forms, custom_decorators

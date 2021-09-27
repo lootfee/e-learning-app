@@ -56,6 +56,14 @@ self.addEventListener('push', function(event) {
   );
 });
 
+/*self.addEventListener('sync', function(event) {
+  if (event.tag == 'example-tag') {
+    event.waitUntil(
+    // Actions to be performed go here.
+    );
+  }
+});*/
+
 
 self.addEventListener('notificationclick', function(e) {
   var notification = e.notification;

@@ -1,11 +1,11 @@
 from app import app
-from flask import render_template, url_for, flash, redirect, request
-from app.admin_forms import *
+from flask import render_template, url_for, flash, redirect, request, make_response
 from app.models import User, Designation
 from app.cme_models import *
 from app.cme_forms import *
 from app.email import *
 from app.web_push_handler import *
+from app.custom_decorators import course_admin_required, admin_required, course_creator_required
 from flask_login import login_user, logout_user, login_required, current_user
 from flask_wtf.csrf import CSRFError
 from werkzeug.urls import url_parse
@@ -33,24 +33,25 @@ def allowed_cme_video(filename):
 @login_required
 def cme_admin():
     return redirect(url_for('cme_manage_courses'))
-    # if current_user.id == 1 or current_user.designation_id <= 3:
-    #     users = User.query.all()
-    #     designations = Designation.query.all()
-    #     return render_template('cme_admin/admin_index.html', users=users, designations=designations)
-    # else:
-    #     redirect(url_for('index'))
 
 
 @app.route('/learning_hub/topics', methods=['GET', 'POST'])
 @login_required
+@course_admin_required
 def cme_topics():
-    if current_user.designation_id != 1:
-        return redirect(url_for('continuing_medical_education'))
+    # if current_user.designation_id != 1:
+    #     return redirect(url_for('continuing_medical_education'))
     topics = CmeCourseTopic.query.order_by(CmeCourseTopic.name.asc()).all()
     form = AddTopicForm()
     if form.validate_on_submit():
         topic = CmeCourseTopic(name=form.name.data)
         db.session.add(topic)
+        db.session.commit()
+        log = ActivityLog(log=f'{topic.id}-{topic.name} added by {current_user.id}-{current_user.name}',
+                          date=datetime.now())
+        db.session.add(log)
+        db.session.commit()
+        topic.logs.append(log)
         db.session.commit()
         flash(f'{topic.name} topic category added', 'alert-info')
         return redirect(url_for('cme_topics'))
@@ -59,9 +60,10 @@ def cme_topics():
 
 @app.route('/learning_hub/manage_courses', methods=['GET', 'POST'])
 @login_required
+@course_creator_required
 def cme_manage_courses():
-    if current_user.is_cme_course_creator() == False and current_user.designation_id != 1:
-        return redirect(url_for('continuing_medical_education'))
+    # if current_user.is_cme_course_creator() == False and current_user.designation_id != 1:
+    #     return redirect(url_for('continuing_medical_education'))
     courses = CmeCourse.query.order_by(CmeCourse.presentation_date.desc()).all()
     users = User.query.all()
     form = EditCourseForm()
@@ -96,6 +98,16 @@ def cme_manage_courses():
                 presented_by3 = User.query.get(form.presented_by3.data)
                 course.creators.append(presented_by3)
             db.session.commit()
+
+            log = ActivityLog(log=f'{course.id}-{course.title} topic-{course.topic_id}-{course.topic.name} '
+                                  f'deadline-{course.deadline} coverpage-{course.cover_page} '
+                                  f'creators-{[(creator.id, creator.name) for creator in course.creators]} '
+                                  f'updated by {current_user.id}-{current_user.name}',
+                              date=datetime.now())
+            db.session.add(log)
+            db.session.commit()
+            course.logs.append(log)
+            db.session.commit()
             flash(course.title + ' course details edited', 'alert-info')
             return redirect(url_for('cme_manage_courses'))
 
@@ -113,9 +125,10 @@ def cme_manage_courses():
 
 @app.route('/learning_hub/add_course', methods=['GET', 'POST'])
 @login_required
+@course_admin_required
 def cme_add_course():
-    if current_user.designation_id != 1:
-        return redirect(url_for('continuing_medical_education'))
+    # if current_user.designation_id != 1:
+    #     return redirect(url_for('continuing_medical_education'))
     form = AddCourseForm()
     users = User.query.order_by(User.name.asc()).all()
     topics = CmeCourseTopic.query.order_by(CmeCourseTopic.name.asc()).all()
@@ -156,7 +169,16 @@ def cme_add_course():
 
                 for user in new_course.creators:
                     trigger_push_notifications_for_user(push_json, user)
-
+                log = ActivityLog(
+                    log=f'{new_course.id}-{new_course.title} topic-{new_course.topic_id}-{new_course.topic.name} '
+                        f'deadline-{new_course.deadline} coverpage-{new_course.cover_page} '
+                        f'creators-{[(creator.id, creator.name) for creator in new_course.creators]} '
+                        f'added by {current_user.id}-{current_user.name}',
+                    date=datetime.now())
+                db.session.add(log)
+                db.session.commit()
+                new_course.logs.append(log)
+                db.session.commit()
                 flash(new_course.title + ' course added.', 'alert-info')
                 return redirect(url_for('cme_add_course_content', token=new_course.get_id_token()))
             else:
@@ -167,14 +189,23 @@ def cme_add_course():
 
 @app.route('/learning_hub/delete_course/<token>', methods=['GET', 'POST'])
 @login_required
+@course_admin_required
 def cme_delete_course(token):
     course = CmeCourse.verify_id_token(token)
     if not course:
         flash('Token expired!', 'alert-warning')
         return redirect(url_for('index'))
-    if course.is_creator(current_user) == False and current_user.designation_id > 1:
-        return redirect(url_for('continuing_medical_education'))
-    db.session.delete(course)
+    # if course.is_creator(current_user) == False and current_user.designation_id > 1:
+    #     return redirect(url_for('continuing_medical_education'))
+    # db.session.delete(course)
+    course.deleted = True
+    db.session.commit()
+    log = ActivityLog(
+        log=f'{course.id}-{course.title} deleted by {current_user.id}-{current_user.name},',
+        date=datetime.now())
+    db.session.add(log)
+    db.session.commit()
+    course.logs.append(log)
     db.session.commit()
     return redirect(url_for('cme_manage_courses'))
 
@@ -186,7 +217,7 @@ def cme_add_course_content(token):
     if not course:
         flash('Token expired!', 'alert-warning')
         return redirect(url_for('index'))
-    if course.is_creator(current_user) == False and current_user.designation_id > 1:
+    if course.is_creator(current_user) == False:
         return redirect(url_for('continuing_medical_education'))
     form = AddCourseContentForm()
     if form.validate_on_submit():
@@ -195,6 +226,14 @@ def cme_add_course_content(token):
                                    course_id=course.id)
         db.session.add(content)
         db.session.commit()
+        log = ActivityLog(
+            log=f'{content.id}-{content.title} index-{content.index} added by {current_user.id}-{current_user.name}',
+            date=datetime.now())
+        db.session.add(log)
+        db.session.commit()
+        content.logs.append(log)
+        current_user.logs.append(log)
+        db.session.commit()
         flash('Content ' + content.title + ' added', 'alert-info')
         return redirect(url_for('cme_add_course_content_slides', token=content.get_id_token()))
     edit_form = EditCourseContentForm()
@@ -202,6 +241,15 @@ def cme_add_course_content(token):
         edit_content = CmeCourseContent.verify_id_token(edit_form.content_id.data)
         edit_content.title = edit_form.edit_title.data
         edit_content.index = edit_form.edit_index.data
+        db.session.commit()
+        log = ActivityLog(
+            log=f'{edit_content.id}-{edit_content.title} index-{edit_content.index} '
+                f'edited by {current_user.id}-{current_user.name}',
+            date=datetime.now())
+        db.session.add(log)
+        db.session.commit()
+        edit_content.logs.append(log)
+        current_user.logs.append(log)
         db.session.commit()
         flash('Content ' + edit_content.title + 'edited.', 'alert-info')
         return redirect(url_for('cme_add_course_content', token=edit_content.get_id_token()))
@@ -215,9 +263,17 @@ def cme_delete_course_content(token):
     if not content:
         flash('Token expired!', 'alert-warning')
         return redirect(url_for('index'))
-    if content.course.is_creator(current_user) == False and current_user.designation_id > 1:
+    if content.course.is_creator(current_user) == False:
         return redirect(url_for('continuing_medical_education'))
-    db.session.delete(content)
+    # db.session.delete(content)
+    content.deleted = True
+    db.session.commit()
+    log = ActivityLog(
+        log=f'{content.id}-{content.title} deleted by {current_user.id}-{current_user.name}')
+    db.session.add(log)
+    db.session.commit()
+    content.logs.append(log)
+    current_user.logs.append(log)
     db.session.commit()
     flash(content.title + ' deleted!', 'alert-info')
     return redirect(url_for('cme_add_course_content', token=content.get_id_token()))
@@ -230,11 +286,11 @@ def cme_add_course_content_slides(token):
     if not content:
         flash('Token expired!', 'alert-warning')
         return redirect(url_for('index'))
-    if content.course.is_creator(current_user) == False and current_user.designation_id > 1:
+    if content.course.is_creator(current_user) == False:
         return redirect(url_for('continuing_medical_education'))
     form = AddContentSlideForm()
     edit_form = EditContentSlideForm()
-    video_form = AddContentVideoForm()
+    # video_form = AddContentVideoForm()
     if form.submit.data:
         if form.validate_on_submit():
             file = form.image_file.data
@@ -253,6 +309,15 @@ def cme_add_course_content_slides(token):
                                          course_id=content.course_id,
                                          course_content_id=content.id)
                 db.session.add(slide)
+                db.session.commit()
+                log = ActivityLog(
+                    log=f'slide-{slide.id} image-file-{slide.image_file} sound-file-{slide.sound_file} '
+                        f'text-{slide.slide_text} index-{slide.index} course-id-{slide.course_id} course-content-id-{slide.course_content_id}'
+                        f'added by {current_user.id}-{current_user.name}')
+                db.session.add(log)
+                db.session.commit()
+                slide.logs.append(log)
+                current_user.logs.append(log)
                 db.session.commit()
                 flash('Slide has been added', 'alert-info')
             return redirect(url_for('cme_add_course_content_slides', token=content.get_id_token()))
@@ -279,28 +344,102 @@ def cme_add_course_content_slides(token):
             edit_slide.sound_file = tts_filename
             edit_slide.index = edit_form.edit_index.data
             db.session.commit()
+            log = ActivityLog(
+                log=f'slide-{edit_slide.id} image-file-{edit_slide.image_file} sound-file-{edit_slide.sound_file} '
+                    f'text-{edit_slide.slide_text} index-{edit_slide.index} course-id-{edit_slide.course_id} course-content-id-{edit_slide.course_content_id}'
+                    f'added by {current_user.id}-{current_user.name}')
+            db.session.add(log)
+            db.session.commit()
+            edit_slide.logs.append(log)
+            current_user.logs.append(log)
+            db.session.commit()
             flash('Slide has been edited', 'alert-info')
             return redirect(url_for('cme_add_course_content_slides', token=content.get_id_token()))
 
-    if video_form.video_submit.data:
-        if video_form.validate_on_submit():
-            file = video_form.video_file.data
-            if allowed_cme_video(file.filename):
+    # if video_form.video_submit.data:
+    #     if video_form.validate_on_submit():
+    #         file = video_form.video_file.data
+    #         if allowed_cme_video(file.filename):
+    #
+    #             filename_ = secure_filename(file.filename)
+    #             filename = datetime.strftime(datetime.now(), '%Y-%m-%d-%H-%M-%S-') + filename_
+    #             file.save(os.path.join('app/static/cme/', filename))
+    #
+    #             slide = CmeContentSlides(sound_file=filename,
+    #                                      index=video_form.video_index.data,
+    #                                      course_id=content.course_id,
+    #                                      course_content_id=content.id)
+    #             db.session.add(slide)
+    #             db.session.commit()
+    #             flash('Video has been added', 'alert-info')
+    #             return redirect(url_for('cme_add_course_content_slides', token=content.get_id_token()))
 
-                filename_ = secure_filename(file.filename)
-                filename = datetime.strftime(datetime.now(), '%Y-%m-%d-%H-%M-%S-') + filename_
-                file.save(os.path.join('app/static/cme/', filename))
+    return render_template('cme_admin/add_content_slides.html', content=content, form=form, edit_form=edit_form)
 
-                slide = CmeContentSlides(sound_file=filename,
-                                         index=video_form.video_index.data,
-                                         course_id=content.course_id,
-                                         course_content_id=content.id)
-                db.session.add(slide)
-                db.session.commit()
-                flash('Video has been added', 'alert-info')
-                return redirect(url_for('cme_add_course_content_slides', token=content.get_id_token()))
 
-    return render_template('cme_admin/add_content_slides.html', content=content, form=form, edit_form=edit_form, video_form=video_form)
+@app.route('/learning_hub/upload_video/<token>', methods=['POST'])
+@login_required
+def cme_upload_video(token):
+    content = CmeCourseContent.verify_id_token(token)
+    if not content:
+        flash('Token expired!', 'alert-warning')
+        return redirect(url_for('index'))
+    if content.course.is_creator(current_user) == False:
+        return redirect(url_for('continuing_medical_education'))
+
+    file = request.files['file']
+    filename_ = secure_filename(file.filename)
+    filename = f'video_{content.id}_{filename_}'#datetime.strftime(datetime.now(), '%Y-%m-%d-%H-%M-%S-') + filename_
+    save_path = os.path.join('app/static/cme/', filename)
+    current_chunk = int(request.form['dzchunkindex'])
+    # If the file already exists it's ok if we are appending to it,
+    # but not if it's new file that would overwrite the existing one
+    if os.path.exists(save_path) and current_chunk == 0:
+        # 400 and 500s will tell dropzone that an error occurred and show an error
+        return make_response(('File already exists', 400))
+
+    try:
+        with open(save_path, 'ab') as f:
+            f.seek(int(request.form['dzchunkbyteoffset']))
+            f.write(file.stream.read())
+    except OSError:
+        # log.exception will include the traceback so we can see what's wrong
+        # log.exception('Could not write to file')
+        return make_response(("Not sure why,"
+                              " but we couldn't write the file to disk", 500))
+
+    total_chunks = int(request.form['dztotalchunkcount'])
+    if current_chunk + 1 == total_chunks:
+        # This was the last chunk, the file should be complete and the size we expect
+        if os.path.getsize(save_path) != int(request.form['dztotalfilesize']):
+            # log.error(f"File {file.filename} was completed, "
+            #           f"but has a size mismatch."
+            #           f"Was {os.path.getsize(save_path)} but we"
+            #           f" expected {request.form['dztotalfilesize']} ")
+            print(f"File {file.filename} was completed, "
+                      f"but has a size mismatch."
+                      f"Was {os.path.getsize(save_path)} but we"
+                      f" expected {request.form['dztotalfilesize']} ")
+            return make_response(('Size mismatch', 500))
+        else:
+            print(f'File {file.filename} has been uploaded successfully')
+            video_file = CmeContentVideo(video_file=filename,
+                                     course_id=content.course_id,
+                                     course_content_id=content.id)
+            db.session.add(video_file)
+            db.session.commit()
+            log = ActivityLog(
+                log=f'{video_file.id}-{video_file.video_file} added by {current_user.id}-{current_user.name}')
+            db.session.add(log)
+            db.session.commit()
+            video_file.logs.append(log)
+            current_user.logs.append(log)
+            db.session.commit()
+    else:
+        print(f'Chunk {current_chunk + 1} of {total_chunks} '
+                  f'for file {file.filename} complete')
+        return make_response(("Chunk upload successful", 200))
+    return make_response(('Uploaded Chunk', 200))
 
 
 @app.route('/learning_hub/delete_content_slide/<token>', methods=['GET', 'POST'])
@@ -310,12 +449,47 @@ def cme_delete_content_slide(token):
     if not slide:
         flash('Token expired!', 'alert-warning')
         return redirect(url_for('index'))
-    if slide.course.is_creator(current_user) == False and current_user.designation_id > 1:
+    if slide.course.is_creator(current_user) == False:
         return redirect(url_for('continuing_medical_education'))
-    db.session.delete(slide)
+    # db.session.delete(slide)
+    slide.deleted = True
     db.session.commit()
+    log = ActivityLog(
+        log=f'slide-{slide.id} deleted by {current_user.id}-{current_user.name}')
+    db.session.add(log)
+    db.session.commit()
+    slide.logs.append(log)
+    current_user.logs.append(log)
+    db.session.commit()
+    # os.remove(f'app/static/cme/{slide.image_file}')
+    # os.remove(f'app/static/cme/{slide.sound_file}')
     flash('Slide deleted!', 'alert-info')
-    return redirect(url_for('cme_add_course_content_slides', token=slide.get_id_token()))
+    return redirect(url_for('cme_add_course_content_slides', token=slide.course_content.get_id_token()))
+
+
+@app.route('/learning_hub/delete_content_video/<token>', methods=['GET', 'POST'])
+@login_required
+def cme_delete_content_video(token):
+    video = CmeContentVideo.verify_id_token(token)
+    if not video:
+        flash('Token expired!', 'alert-warning')
+        return redirect(url_for('index'))
+    if video.course.is_creator(current_user) == False:
+        return redirect(url_for('continuing_medical_education'))
+
+    # db.session.delete(video)
+    video.deleted = True
+    db.session.commit()
+    log = ActivityLog(
+        log=f'video-{video.id} deleted by {current_user.id}-{current_user.name}')
+    db.session.add(log)
+    db.session.commit()
+    video.logs.append(log)
+    current_user.logs.append(log)
+    db.session.commit()
+    # os.remove(f'app/static/cme/{video.video_file}')
+    flash('Video deleted!', 'alert-info')
+    return redirect(url_for('cme_add_course_content_slides', token=video.course_content.get_id_token()))
 
 
 @app.route('/learning_hub/manage_exam/<token>', methods=['GET', 'POST'])
@@ -325,7 +499,7 @@ def cme_manage_exam(token):
     if not course:
         flash('Token expired!', 'alert-warning')
         return redirect(url_for('index'))
-    if course.is_creator(current_user) == False and current_user.designation_id > 1:
+    if course.is_creator(current_user) == False:
         return redirect(url_for('continuing_medical_education'))
     form = AddQuestionForm()
     if form.validate_on_submit():
@@ -348,6 +522,15 @@ def cme_manage_exam(token):
                                                   course_id=course.id)
                 db.session.add(choice)
                 db.session.commit()
+        log = ActivityLog(
+            log=f'question-{question.id}-{question.title} explanation-{question.answer_explanation} '
+                f'choices-{[(c.id, c.title, c.answer) for c in question.choices]} '
+                f'added by {current_user.id}-{current_user.name}')
+        db.session.add(log)
+        db.session.commit()
+        question.logs.append(log)
+        current_user.logs.append(log)
+        db.session.commit()
         flash('Question saved', 'alert-info')
         return redirect(url_for('cme_manage_exam', token=course.get_id_token()))
 
@@ -372,6 +555,15 @@ def cme_manage_exam(token):
                                                   course_id=course.id)
                 db.session.add(choice)
                 db.session.commit()
+        log = ActivityLog(
+            log=f'question-{edit_question.id}-{edit_question.title} explanation-{edit_question.answer_explanation} '
+                f'choices-{[(c.id, c.title, c.answer) for c in edit_question.choices]} '
+                f'edited by {current_user.id}-{current_user.name}')
+        db.session.add(log)
+        db.session.commit()
+        edit_question.logs.append(log)
+        current_user.logs.append(log)
+        db.session.commit()
         flash('Question saved', 'alert-info')
         return redirect(url_for('cme_manage_exam', token=course.get_id_token()))
 
@@ -386,7 +578,7 @@ def cme_get_question_choices():
 
     if not question:
         return "Invalid token"
-    if question.course.is_creator(current_user) == False and current_user.designation_id > 1:
+    if question.course.is_creator(current_user) == False:
         return "Invalid access"
     question_data = {
         'title': question.title,
@@ -412,9 +604,16 @@ def delete_exam_question(token):
     if not question:
         flash('Token expired!', 'alert-warning')
         return redirect(url_for('index'))
-    if question.course.is_creator(current_user) == False and current_user.designation_id > 1:
+    if question.course.is_creator(current_user) == False:
         return redirect(url_for('continuing_medical_education'))
     db.session.delete(question)
+    db.session.commit()
+    log = ActivityLog(
+        log=f'question-{question.id}-{question.title} deleted by {current_user.id}-{current_user.name}')
+    db.session.add(log)
+    db.session.commit()
+    question.logs.append(log)
+    current_user.logs.append(log)
     db.session.commit()
     flash('Question deleted!', 'alert-info')
     return redirect(url_for('cme_manage_exam', token=question.course.get_id_token()))
@@ -425,8 +624,9 @@ def delete_exam_question(token):
 def cme_publish_course(token):
     course = CmeCourse.verify_id_token(token)
     if not course:
-        redirect(url_for('index'))
-    if course.is_creator(current_user) == False and current_user.designation_id > 1:
+        flash('Token expired!', 'alert-warning')
+        return redirect(url_for('index'))
+    if course.is_creator(current_user) == False:
         return redirect(url_for('continuing_medical_education'))
 
     # verify that course content index is complete
@@ -435,7 +635,9 @@ def cme_publish_course(token):
         if e - 1 != i:
             flash('Missing index number in course chapters.', 'alert-warning')
             return redirect(url_for('cme_add_course_content', token=course.get_id_token()))
-
+    if not course.questions:
+        flash('Please add course pre/post test questions.', 'alert-warning')
+        return redirect(url_for('cme_add_course_content', token=course.get_id_token()))
     if course.published == False:
         course.published = True
         course.published_date = datetime.now()
@@ -445,12 +647,25 @@ def cme_publish_course(token):
                      "body": f'{course.title} course has been published on the Training and Development App.',
                      }
         trigger_push_notifications_for_all(push_json)
-
+        log = ActivityLog(
+            log=f'{course.id}-{course.title} published by {current_user.id}-{current_user.name}')
+        db.session.add(log)
+        db.session.commit()
+        course.logs.append(log)
+        current_user.logs.append(log)
+        db.session.commit()
         flash(course.title + ' published.', 'alert-info')
         return redirect(url_for('cme_add_course_content', token=course.get_id_token()))
     elif course.published == True:
         course.published = False
         course.published_date = None
+        db.session.commit()
+        log = ActivityLog(
+            log=f'{course.id}-{course.title} unpublished by {current_user.id}-{current_user.name}')
+        db.session.add(log)
+        db.session.commit()
+        course.logs.append(log)
+        current_user.logs.append(log)
         db.session.commit()
         flash(course.title + ' unpublished.', 'alert-info')
         return redirect(url_for('cme_add_course_content', token=course.get_id_token()))
@@ -458,18 +673,20 @@ def cme_publish_course(token):
 
 @app.route('/learning_hub/dashboards', methods=['GET', 'POST'])
 @login_required
+@course_admin_required
 def cme_dashboards():
-    if current_user.designation_id != 1:
-        return redirect(url_for('continuing_medical_education'))
+    # if not current_user.is_cme_admin():
+    #     return redirect(url_for('continuing_medical_education'))
     year = datetime.now().year
     return redirect(url_for('cme_dashboard_annual_plan', year=year))
 
 
 @app.route('/learning_hub/dashboards/dashboard_annual_plan/<int:year>', methods=['GET', 'POST'])
 @login_required
+@course_admin_required
 def cme_dashboard_annual_plan(year):
-    if current_user.designation_id != 1:
-        return redirect(url_for('continuing_medical_education'))
+    # if not current_user.is_cme_admin():
+    #     return redirect(url_for('continuing_medical_education'))
     current_year = year
     years = list(range(datetime.now().year, 2020, -1))
     # current_month = month
@@ -482,9 +699,10 @@ def cme_dashboard_annual_plan(year):
 
 @app.route('/learning_hub/dashboards/courses_summary/<int:year>/<int:month>', methods=['GET', 'POST'])
 @login_required
+@course_admin_required
 def cme_courses_summary(year, month):
-    if current_user.designation_id != 1:
-        return redirect(url_for('continuing_medical_education'))
+    # if current_user.designation_id != 1:
+    #     return redirect(url_for('continuing_medical_education'))
     current_year = year
     years = list(range(datetime.now().year, 2020, -1))
     current_month = month
@@ -499,22 +717,26 @@ def cme_courses_summary(year, month):
 
 @app.route('/learning_hub/dashboards/attendance_record/<token>', methods=['GET', 'POST'])
 @login_required
+@course_admin_required
 def cme_attendance_record(token):
-    if current_user.designation_id != 1:
-        return redirect(url_for('continuing_medical_education'))
+    # if current_user.designation_id != 1:
+    #     return redirect(url_for('continuing_medical_education'))
     course = CmeCourse.verify_id_token(token)
     if not course:
+        flash('Token expired!', 'alert-warning')
         return redirect(url_for('cme_dashboards'))
     return render_template('cme_admin/dashboard_attendance_record.html', course=course)
 
 
 @app.route('/learning_hub/dashboards/consolidated_report/<token>', methods=['GET', 'POST'])
 @login_required
+@course_admin_required
 def cme_consolidated_report(token):
-    if current_user.designation_id != 1:
-        return redirect(url_for('continuing_medical_education'))
+    # if current_user.designation_id != 1:
+    #     return redirect(url_for('continuing_medical_education'))
     course = CmeCourse.verify_id_token(token)
     if not course:
+        flash('Token expired!', 'alert-warning')
         return redirect(url_for('cme_dashboards'))
     post_tests = len(course.post_tests)
     post_pass = 0
@@ -527,9 +749,10 @@ def cme_consolidated_report(token):
 
 @app.route('/learning_hub/dashboards/employees_summary/<int:year>', methods=['GET', 'POST'])
 @login_required
+@course_admin_required
 def cme_employees_summary(year):
-    if current_user.designation_id != 1:
-        return redirect(url_for('continuing_medical_education'))
+    # if current_user.designation_id != 1:
+    #     return redirect(url_for('continuing_medical_education'))
     current_year = year
     years = list(range(datetime.now().year, 2020, -1))
     courses = CmeCourse.query.filter(extract('year', CmeCourse.deadline) == current_year).all()
@@ -568,6 +791,7 @@ def cme_employees_summary(year):
 def cme_employee(token, year):
     user = User.verify_id_token(token)
     if not user:
+        flash('Token expired!', 'alert-warning')
         return redirect(url_for('cme_dashboards'))
     current_year = year
     years = list(range(datetime.now().year, 2020, -1))

@@ -140,3 +140,4 @@ cython_debug/
 
 migrations/
 static/cme/*
+static/bulletin/*

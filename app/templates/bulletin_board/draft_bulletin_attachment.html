@@ -1,0 +1,141 @@
+{% extends "bulletin_board/bb_base.html" %}
+
+{% block bb_content %}
+<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+    <h3>Edit Bulletin</h3>
+    {{ wtf.quick_form(form) }}
+</div>
+
+<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+    <h3>Add Attachments</h3>
+    <form method="POST" action='{{ url_for('bulletin_upload_attachments', token=draft_bulletin.get_id_token()) }}' class="dropzone dz-clickable"
+          id="dropper" enctype="multipart/form-data">
+    </form>
+
+    <h4>Uploaded files</h4>
+    {% for attachment in draft_bulletin.attachments %}
+        {% if not attachment.deleted == True %}
+        {% if attachment.filetype in ['jpg', 'jpeg', 'png'] %}
+        <div class="col-lg-4 col-md-4 col-sm-12 col-xs-12">
+            <img src="{{ url_for('static', filename=attachment.filepath) }}" alt="Bulletin Attachment" style="width: 300px; height: 160px">
+            <button class="btn btn-danger" data-toggle="popover" data-placement="top" data-container="body" data-html="true"
+                    data-content="<p>Are you sure you want to delete this attachment?</p>
+                    <a class='btn btn-danger' href='{{ url_for('bulletin_delete_attachment', token=attachment.get_id_token()) }}'></a>">
+                <i class="fas fa-trash"></i> Delete
+            </button>
+        </div>
+        {% elif attachment.filetype == 'pdf' %}
+        <div class="col-lg-4 col-md-4 col-sm-12 col-xs-12">
+            <iframe src="{{ url_for('static', filename=attachment.filepath) }}" class="pdf_attachment" frameborder="0"></iframe>
+            <ul>
+                <li><a href="{{ url_for('static', filename=attachment.filepath) }}">{{ attachment.filename }}</a></li>
+            </ul>
+            <button class="btn btn-danger" data-toggle="popover" data-placement="top" data-container="body" data-html="true"
+                    data-content="<p>Are you sure you want to delete this attachment?</p>
+                    <a class='btn btn-danger' href='{{ url_for('bulletin_delete_attachment', token=attachment.get_id_token()) }}'></a>">
+                <i class="fas fa-trash"></i> Delete
+            </button>
+        </div>
+        {% elif attachment.filetype == 'mp4' %}
+        <div class="col-lg-4 col-md-4 col-sm-12 col-xs-12">
+            <video width="300" height="160" controls>
+                <source src="{{ url_for('static', filename=attachment.filepath) }}" type="video/mp4">
+            </video>
+            <button class="btn btn-danger" data-toggle="popover" data-placement="top" data-container="body" data-html="true"
+                    data-content="<p>Are you sure you want to delete this attachment?</p>
+                    <a class='btn btn-danger' href='{{ url_for('bulletin_delete_attachment', token=attachment.get_id_token()) }}'></a>">
+                <i class="fas fa-trash"></i> Delete
+            </button>
+        </div>
+        {% endif %}
+        {% endif %}
+    {% endfor %}
+</div>
+
+{% endblock %}
+
+
+{% block styles %}
+{{ super() }}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.4.0/min/dropzone.min.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.4.0/min/basic.min.css"/>
+
+{% endblock %}
+{% block scripts %}
+{{ super() }}
+<script type="application/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.4.0/min/dropzone.min.js"></script>
+<script>
+$(document).ready(function () {
+    {% for department in draft_bulletin.departments %}
+    console.log('{{department.name}}')
+    var dept_list = '<div class="input-group">' +
+                '      <input type="text" class="form-control" name="department_list" value="{{ department.id }}" style="display: none">' +
+                '      <span class="input-group-addon">{{ department.name }}</span>' +
+                '      <span class="input-group-btn">' +
+                '        <button class="btn btn-default dept_list_x_btn" type="button">X</button>' +
+                '      </span>' +
+                '    </div>'
+    $('#departments').parent().append(dept_list)
+    {% endfor %}
+
+    {% for designation in draft_bulletin.designations %}
+    var desig_list = '<div class="input-group">' +
+                '      <input type="text" class="form-control" name="designation_list" value="{{ designation.id }}" style="display: none">' +
+                '      <span class="input-group-addon">{{ designation.name }}</span>' +
+                '      <span class="input-group-btn">' +
+                '        <button class="btn btn-default desig_list_x_btn" type="button">X</button>' +
+                '      </span>' +
+                '    </div>'
+    $('#designations').parent().append(desig_list)
+    {% endfor %}
+})
+
+$('#departments').change(function () {
+    var selected_val = $(this).val()
+    var selected_text = $('#departments option:selected').text()
+    var dept_list = '<div class="input-group">' +
+                '      <input type="text" class="form-control" name="department_list" value="' + selected_val +'" style="display: none">' +
+                '      <span class="input-group-addon">' + selected_text +'</span>' +
+                '      <span class="input-group-btn">' +
+                '        <button class="btn btn-default dept_list_x_btn" type="button">X</button>' +
+                '      </span>' +
+                '    </div>'
+    $(this).parent().append(dept_list)
+})
+
+$('#designations').change(function () {
+    var selected_val = $(this).val()
+    var selected_text = $('#designations option:selected').text()
+    var desig_list = '<div class="input-group">' +
+                '      <input type="text" class="form-control" name="designation_list" value="' + selected_val +'" style="display: none">' +
+                '      <span class="input-group-addon">' + selected_text +'</span>' +
+                '      <span class="input-group-btn">' +
+                '        <button class="btn btn-default desig_list_x_btn" type="button">X</button>' +
+                '      </span>' +
+                '    </div>'
+    $(this).parent().append(desig_list)
+})
+
+$(document).on('click', '.dept_list_x_btn', function () {
+    $(this).parents('.input-group').remove()
+})
+
+$(document).on('click', '.desig_list_x_btn', function () {
+    $(this).parents('.input-group').remove()
+})
+</script>
+<script type="application/javascript">
+    Dropzone.options.dropper = {
+        paramName: 'file',
+        chunking: true,
+        forceChunking: true,
+        url: '{{ url_for('bulletin_upload_attachments', token=draft_bulletin.get_id_token()) }}',
+        maxFilesize: 1025, // megabytes
+        chunkSize: 1000000, // bytes
+        headers: {
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        }
+    }
+</script>
+
+{% endblock %}

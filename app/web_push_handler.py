@@ -6,7 +6,7 @@ from pywebpush import webpush, WebPushException
 import json
 from threading import Thread
 
-from app.models import PushSubscription
+from app.models import PushSubscription, Role
 
 
 @app.route("/push-subscriptions", methods=["POST"])
@@ -100,6 +100,49 @@ def trigger_push_notifications_for_user_designation(json, users):
     # })
 
 
+def trigger_push_notifications_for_admins(json):
+    json_data = json
+    print('trigger_push_notifications', json_data)
+    users = []
+    admin_roles = Role.query.filter(Role.id <= 2).all()
+    for admin in admin_roles:
+        for user in admin.users:
+            users.append(user.email)
+    title = json_data.get('title')
+    body = json_data.get('body')
+    data = json_data.get('data')
+    Thread(target=trigger_push_notifications_for_user_designation_subscriptions, args=(users, title, body, data)).start()
+
+
+def trigger_push_notifications_for_cme_admins(json):
+    json_data = json
+    print('trigger_push_notifications', json_data)
+    users = []
+    admin_roles = Role.query.filter(Role.id == 1).all()
+    for admin in admin_roles:
+        for user in admin.users:
+            users.append(user.email)
+    title = json_data.get('title')
+    body = json_data.get('body')
+    data = json_data.get('data')
+    Thread(target=trigger_push_notifications_for_user_designation_subscriptions, args=(users, title, body, data)).start()
+
+
+def trigger_push_notifications_for_bb_admins(json):
+    json_data = json
+    print('trigger_push_notifications', json_data)
+    users = []
+    admin_roles = Role.query.filter(Role.id == 2).all()
+    for admin in admin_roles:
+        for user in admin.users:
+            users.append(user.email)
+    title = json_data.get('title')
+    body = json_data.get('body')
+    data = json_data.get('data')
+    Thread(target=trigger_push_notifications_for_user_designation_subscriptions, args=(users, title, body, data)).start()
+
+
+
 def trigger_push_notification(push_subscription, title, body, data):
     try:
         response = webpush(
@@ -145,4 +188,4 @@ def trigger_push_notifications_for_user_subscriptions(user, title, body, data):
 
 def trigger_push_notifications_for_user_designation_subscriptions(users, title, body, data):
     with app.app_context():
-        return {user.id: trigger_push_notifications_for_user_subscriptions(user, title, body) for user in users}
+        return {user.id: trigger_push_notifications_for_user_subscriptions(user, title, body, data) for user in users}

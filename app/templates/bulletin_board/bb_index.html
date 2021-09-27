@@ -1,0 +1,101 @@
+{% extends "bulletin_board/bb_base.html" %}
+
+{% block bb_content %}
+<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+    <h3 class="text-center">Bulletin Board</h3>
+    {% for bulletin in bulletins %}
+    {% if bulletin.is_target_viewer(current_user) %}
+    <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+        <div class="panel panel-info">
+            <div class="panel-heading">
+                <span>#{{ bulletin.topic.name }} </span>
+                {% if bulletin.important == True %}
+                <span style="color: orange"> <i class="fas fa-exclamation"></i> Important</span>
+                {% endif %}
+                <h3 class="panel-title"><a href="{{ url_for('bulletin', token=bulletin.get_id_token()) }}">{{ bulletin.title }}</a></h3>
+            </div>
+            <div class="panel-body">
+                {{ bulletin.content }}
+            </div>
+            <div class="panel-footer">
+                <div class="row">
+                    <a href="{{ url_for('bulletin', token=bulletin.get_id_token()) }}">
+                    <div class="col-lg-8 col-md-8 col-sm-12 col-xs-12" style="margin-left: 10px; margin-right: 10px;">
+                        Posted by: {{ bulletin.submitted_by.name }}, {{ bulletin.approve_date.strftime('%b %d, %Y') }}
+                    </div>
+                    <div class="col-lg-4 col-md-4 col-sm-12 col-xs-12" style="margin-left: 10px; margin-right: 10px;">
+                        <span><i class="fas fa-eye"></i> {{ bulletin.view_count() }}</span>
+                        <span><i class="fas fa-comments"></i> {{ bulletin.comment_count() }}</span>
+                    </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    {% endfor %}
+</div>
+
+<div class="row">
+    <div class="col-lg-2 col-lg-offset-10 col-md-2 col-md-offset-10 col-sm-3 col-sm-offset-9 col-xs-3 col-xs-offset-9 create_course_cont">
+        <button class="btn btn-primary btn-lg" data-toggle="modal" data-target="#add_bulletin_modal" title="Add bulletin">
+            <i class="fas fa-plus-circle"></i>
+        </button>
+    </div>
+</div>
+
+<div class="modal fade" id="add_bulletin_modal" tabindex="-1" role="dialog" aria-labelledby="add_bulletin_modal_label">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="add_bulletin_modal_label">Add Bulletin</h4>
+      </div>
+      <div class="modal-body">
+        {{ wtf.quick_form(form) }}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+$('#departments').change(function () {
+    var selected_val = $(this).val()
+    var selected_text = $('#departments option:selected').text()
+    //console.log($(this).val(), $('#departments option:selected').text())
+    var dept_list = '<div class="input-group">' +
+                '      <input type="text" class="form-control" name="department_list" value="' + selected_val +'" style="display: none">' +
+                '      <span class="input-group-addon">' + selected_text +'</span>' +
+                '      <span class="input-group-btn">' +
+                '        <button class="btn btn-default dept_list_x_btn" type="button">X</button>' +
+                '      </span>' +
+                '    </div>'
+    $(this).parent().append(dept_list)
+})
+
+$('#designations').change(function () {
+    var selected_val = $(this).val()
+    var selected_text = $('#designations option:selected').text()
+    //console.log($(this).val(), $('#departments option:selected').text())
+    var dept_list = '<div class="input-group">' +
+                '      <input type="text" class="form-control" name="designation_list" value="' + selected_val +'" style="display: none">' +
+                '      <span class="input-group-addon">' + selected_text +'</span>' +
+                '      <span class="input-group-btn">' +
+                '        <button class="btn btn-default desig_list_x_btn" type="button">X</button>' +
+                '      </span>' +
+                '    </div>'
+    $(this).parent().append(dept_list)
+})
+
+$(document).on('click', '.dept_list_x_btn', function () {
+    $(this).parents('.input-group').remove()
+})
+
+$(document).on('click', '.desig_list_x_btn', function () {
+    $(this).parents('.input-group').remove()
+})
+</script>
+{% endblock %}

@@ -1,10 +1,10 @@
-{% extends "cme_admin/admin_base.html" %}
+{% extends "bulletin_board_admin/bb_admin_base.html" %}
 
-{% block admin_content %}
+{% block bb_admin_content %}
 <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
-    <h3 class="text-center">Designations</h3>
+    <h3 class="text-center">Topics</h3>
     <div class="text-center">
-        {% for d in designations %}
+        {% for d in topics %}
         <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
             <h4>{{ d.name }}</h4>
         </div>
@@ -14,19 +14,19 @@
 
     <div class="row">
         <div class="col-lg-2 col-lg-offset-10 col-md-2 col-md-offset-10 col-sm-3 col-sm-offset-9 col-xs-3 col-xs-offset-9 create_course_cont">
-            <button class="btn btn-primary btn-lg" data-toggle="modal" data-target="#add_designation_modal" title="Add designation">
+            <button class="btn btn-primary btn-lg" data-toggle="modal" data-target="#add_topic_modal" title="Add topic">
                 <i class="fas fa-plus-circle"></i>
             </button>
         </div>
     </div>
 </div>
 
-<div class="modal fade" id="add_designation_modal" tabindex="-1" role="dialog" aria-labelledby="add_designation_modal_label">
+<div class="modal fade" id="add_topic_modal" tabindex="-1" role="dialog" aria-labelledby="add_topic_modal_label">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h4 class="modal-title" id="add_designation_modal_label">Add Designation</h4>
+        <h4 class="modal-title" id="add_topic_modal_label">Add Topic</h4>
       </div>
       <div class="modal-body">
         {{ wtf.quick_form(form) }}

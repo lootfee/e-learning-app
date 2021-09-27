@@ -19,8 +19,9 @@ from gtts import gTTS
 from app.models import User
 from app.cme_forms import *
 from app.cme_models import *
-from app.email import email_user
+from app.email import email_user, email_course_creators
 from app.pdf_builder import create_cme_certificate_pdf
+from app.web_push_handler import trigger_push_notifications_for_user_designation, trigger_push_notifications_for_user
 
 from datetime import date, datetime, timedelta, time
 # from dateutil import parser
@@ -86,12 +87,23 @@ def cme_course_content(token, content_index):
                                          date_posted=datetime.now())
             db.session.add(question)
             db.session.commit()
+            log = ActivityLog(
+                log=f'question-{question.id}-{question.question} submited by {current_user.id}-{current_user.name}')
+            db.session.add(log)
+            db.session.commit()
+            question.logs.append(log)
+            current_user.logs.append(log)
+            db.session.commit()
+
             flash('Your question has been submitted. You will be notified once your question is answered', 'alert-info')
             subject = f'Question submitted for {course.title}.'
             body = f'{question.questioned_by.name} submitted a question: \n \n {question.question}'
-            for creator in course.creators:
-                email_user(creator.id, subject=subject, body=body)
-            return redirect(request.referrer)
+            email_course_creators(course.creators, subject=subject, body=body)
+            push_json = {"title": f"Course Question Submitted",
+                         "body": f'{question.questioned_by.name} submitted a question for {course.title} course.',
+                         }
+            trigger_push_notifications_for_user_designation(push_json, course.creators)
+            return redirect(url_for('cme_course_content', token=course.get_id_token(), content_index=content_index))
     return render_template('cme/cme_course_content.html', course=course, content=content,
                            content_index=content_index, course_question_form=course_question_form)
 
@@ -104,6 +116,13 @@ def cme_complete_lesson(token):
         return redirect(url_for('continuing_medical_education'))
     if current_user not in content.viewers:
         content.viewers.append(current_user)
+        db.session.commit()
+        log = ActivityLog(
+            log=f'content-{content.id} completed by {current_user.id}-{current_user.name}')
+        db.session.add(log)
+        db.session.commit()
+        content.logs.append(log)
+        current_user.logs.append(log)
         db.session.commit()
     return redirect(url_for('cme_course_content', token=content.course.get_id_token(), content_index=content.index + 1))
 
@@ -127,6 +146,13 @@ def cme_take_pre_test(course_token, question_token):
                                     course_id=course.id,
                                     user_id=current_user.id)
         db.session.add(pre_test)
+        db.session.commit()
+        log = ActivityLog(
+            log=f'Course {course.id}-{course.title} pre-test started by {current_user.id}-{current_user.name}')
+        db.session.add(log)
+        db.session.commit()
+        pre_test.logs.append(log)
+        current_user.logs.append(log)
         db.session.commit()
         return render_template('cme/cme_pre_test.html', course=course, question=None)
 
@@ -155,6 +181,13 @@ def submit_pretest_response(course_token, question_token):
         if response_q:
             response_q.selected_choice_id = choice_id
             db.session.commit()
+            log = ActivityLog(
+                log=f'pre_test_response-{response_q.id} choice-{response_q.selected_choice_id} edited by {current_user.id}-{current_user.name}')
+            db.session.add(log)
+            db.session.commit()
+            response_q.logs.append(log)
+            current_user.logs.append(log)
+            db.session.commit()
             return redirect(url_for('cme_take_pre_test', course_token=course.get_id_token(), question_token=next_question.get_id_token()))
         else:
             answer = CmeCoursePreTestResponse(pretest_id=pre_test.id,
@@ -163,6 +196,13 @@ def submit_pretest_response(course_token, question_token):
                                               course_id=course.id,
                                               user_id=current_user.id)
             db.session.add(answer)
+            db.session.commit()
+            log = ActivityLog(
+                log=f'pre_test_response-{answer.id} choice-{answer.selected_choice_id} submitted by {current_user.id}-{current_user.name}')
+            db.session.add(log)
+            db.session.commit()
+            answer.logs.append(log)
+            current_user.logs.append(log)
             db.session.commit()
             return redirect(url_for('cme_take_pre_test', course_token=course.get_id_token(), question_token=next_question.get_id_token()))
     else:
@@ -192,6 +232,13 @@ def submit_pretest(token):
 
         pre_test.score = score
         pre_test.date_end = datetime.now()
+        db.session.commit()
+        log = ActivityLog(
+            log=f'Course {course.id}-{course.title} pre-test submitted by {current_user.id}-{current_user.name}')
+        db.session.add(log)
+        db.session.commit()
+        course.logs.append(log)
+        current_user.logs.append(log)
         db.session.commit()
         return redirect(url_for('pre_test_summary', token=course.get_id_token()))
 
@@ -229,6 +276,13 @@ def cme_take_post_test(course_token, question_token):
                                     user_id=current_user.id)
         db.session.add(post_test)
         db.session.commit()
+        log = ActivityLog(
+            log=f'Course {course.id}-{course.title} post-test started by {current_user.id}-{current_user.name}')
+        db.session.add(log)
+        db.session.commit()
+        course.logs.append(log)
+        current_user.logs.append(log)
+        db.session.commit()
         return render_template('cme/cme_post_test.html', course=course, question=None)
 
 
@@ -257,6 +311,13 @@ def submit_post_test_response(course_token, question_token):
         if response_q:
             response_q.selected_choice_id = choice_id
             db.session.commit()
+            log = ActivityLog(
+                log=f'post-test-response {response_q.id} choice-{response_q.selected_choice_id} edited by {current_user.id}-{current_user.name}')
+            db.session.add(log)
+            db.session.commit()
+            response_q.logs.append(log)
+            current_user.logs.append(log)
+            db.session.commit()
             return redirect(url_for('cme_take_post_test', token=course.get_id_token(), question_token=next_question.get_id_token()))
         else:
             answer = CmeCoursePostTestResponse(posttest_id=post_test.id,
@@ -265,6 +326,13 @@ def submit_post_test_response(course_token, question_token):
                                               course_id=course.id,
                                               user_id=current_user.id)
             db.session.add(answer)
+            db.session.commit()
+            log = ActivityLog(
+                log=f'post-test-response {answer.id} choice-{answer.selected_choice_id} submitted by {current_user.id}-{current_user.name}')
+            db.session.add(log)
+            db.session.commit()
+            answer.logs.append(log)
+            current_user.logs.append(log)
             db.session.commit()
             return redirect(url_for('cme_take_post_test', course_token=course.get_id_token(), question_token=next_question.get_id_token()))
     else:
@@ -294,6 +362,13 @@ def submit_post_test(token):
 
         post_test.score = score
         post_test.date_end = datetime.now()
+        db.session.commit()
+        log = ActivityLog(
+            log=f'Course {course.id}-{course.title} post-test submitted by {current_user.id}-{current_user.name}')
+        db.session.add(log)
+        db.session.commit()
+        course.logs.append(log)
+        current_user.logs.append(log)
         db.session.commit()
         return redirect(url_for('post_test_summary', token=course.get_id_token()))
 
@@ -326,6 +401,17 @@ def cme_course_user_questions(token):
         question.date_answered = datetime.now()
         print(question.answer, question.answered_by_id, question.date_answered)
         db.session.commit()
+        log = ActivityLog(
+            log=f'Course {course.id}-{course.title} question-{question} answered by {current_user.id}-{current_user.name}')
+        db.session.add(log)
+        db.session.commit()
+        question.logs.append(log)
+        current_user.logs.append(log)
+        db.session.commit()
+        push_json = {"title": f"Course Question Answered",
+                     "body": f'Your question for the course {course.title} has been answered by {question.answered_by.name}.',
+                     }
+        trigger_push_notifications_for_user(push_json, question.questioned_by)
         flash('Question answered', 'alert-info')
         return redirect(url_for('cme_course_user_questions', token=course.get_id_token()))
     return render_template('cme/cme_course_user_questions.html', course=course, form=form)
@@ -408,6 +494,13 @@ def cme_review_course(token):
                                  q21=form.q21.data,
                                  q22=form.q22.data)
         db.session.add(review)
+        db.session.commit()
+        log = ActivityLog(
+            log=f'Course {course.id}-{course.title} reviewed by {current_user.id}-{current_user.name}')
+        db.session.add(log)
+        db.session.commit()
+        course.logs.append(log)
+        current_user.logs.append(log)
         db.session.commit()
         flash(f'Review submitted for {course.title}.', 'alert-info')
         return redirect(url_for('continuing_medical_education'))

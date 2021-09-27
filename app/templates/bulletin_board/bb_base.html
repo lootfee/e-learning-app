@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block app_content %}
+<div class="container-fluid">
+    {% set side_nav_content = [{'endpoint': url_for('bulletin_board'), 'name': 'Bulletin Board', 'icon_class': 'fas fa-bullhorn'},
+                               {'endpoint': url_for('continuing_medical_education'), 'name': 'Courses', 'icon_class': 'fas fa-book-open'}]
+    %}
+    {% if current_user.bulletins_submitted %}
+    {{ side_nav_content.append({'endpoint': url_for('my_bulletins'), 'name': 'My Bulletins', 'icon_class': 'fas fa-scroll'})|default("", True)}}
+    {% endif %}
+    {% if current_user.is_bb_admin() %}
+    {{ side_nav_content.append({'endpoint': url_for('submitted_bulletins'), 'name': 'Submitted Bulletins', 'icon_class': 'fas fa-scroll'})|default("", True)}}
+    {% endif %}
+    {% include 'sidenav.html' %}
+
+    <div class="col-lg-10 col-lg-offset-2 col-md-10 col-md-offset-2 col-sm-12 col-xs-12" id="cme_content">
+        {% block bb_content %}
+
+        {% endblock %}
+    </div>
+</div>
+
+{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<style>
+
+.bulletin_attachment {
+    width: 50vw;
+    height: 400px;
+    border: 2px solid
+}
+
+@media (max-width: 1023px){
+    #course_title {
+        font-size: 18px;
+    }
+}
+
+@media (max-width: 1023px) and (max-height: 500px) {
+    .pdf_attachment {
+        display: none;
+    }
+
+    .bulletin_attachment {
+        width: 80vw;
+        height: 400px
+    }
+
+    .atachment_pdf_title {
+        float: left;
+    }
+}
+
+@media (max-width: 550px) {
+    #course_title {
+        font-size: 16px;
+    }
+
+    .pdf_attachment {
+        display: none;
+    }
+
+    .bulletin_attachment {
+        width: 90vw;
+        height: 400px
+    }
+
+    .atachment_pdf_title {
+        float: left;
+    }
+}
+
+</style>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+$(document).ready(function () {
+    $("body").tooltip({ selector: '[data-toggle=tooltip]' });
+    $("body").popover({ selector: '[data-toggle=popover]' });
+})
+</script>
+{% endblock %}

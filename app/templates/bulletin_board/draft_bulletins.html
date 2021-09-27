@@ -1,0 +1,76 @@
+{% extends "bulletin_board/bb_base.html" %}
+
+{% block bb_content %}
+<h3 class="text-center">My Bulletins</h3>
+{% for bulletin in my_bulletins %}
+<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+    <div class="panel {% if bulletin.approve_date %}panel-info {% else %} panel-warning {% endif %}">
+        <div class="panel-heading">
+            <span>#{{ bulletin.topic.name }} </span>
+            {% if bulletin.important == True %}
+            <span style="color: orange"> <i class="fas fa-exclamation"></i> Important</span>
+            {% endif %}
+            <h3 class="panel-title">{{ bulletin.title }}</h3>
+        </div>
+        <div class="panel-body">
+            {{ bulletin.content }}
+        </div>
+        <div class="panel-footer">
+            {% if not bulletin.approve_date %}
+            <a class="btn btn-primary btn-sm" title="Edit Bulletin" href="{{ url_for('draft_bulletin', token=bulletin.get_id_token()) }}"><i class="fas fa-edit"> Edit</i></a>
+            {% endif %}
+            {% if current_user.is_bb_admin() %}
+                {% if not bulletin.approve_date %}
+                <button class="btn btn-primary btn-sm" data-toggle="popover" data-placement="top" data-container="body" data-html="true"
+                        data-content="<p>Publish this bulletin?</p>
+                        <a class='btn btn-primary' href='{{ url_for('bulletin_publish_bulletin', token=bulletin.get_id_token()) }}'><i class='fas fa-upload'> Publish</i></a>">
+                    <i class='fas fa-upload'> Publish</i>
+                </button>
+                {% else %}
+                <button class="btn btn-warning btn-sm" data-toggle="popover" data-placement="top" data-container="body" data-html="true"
+                        data-content="<p>Unpublish this bulletin?</p>
+                        <a class='btn btn-warning' href='{{ url_for('bulletin_publish_bulletin', token=bulletin.get_id_token()) }}'><i class='fas fa-upload'> Unpublish</i></a>">
+                    <i class='fas fa-upload'> Unpublish</i>
+                </button>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<div class="row">
+    <div class="col-lg-2 col-lg-offset-10 col-md-2 col-md-offset-10 col-sm-3 col-sm-offset-9 col-xs-3 col-xs-offset-9 create_course_cont">
+        <button class="btn btn-primary btn-lg" data-toggle="modal" data-target="#add_bulletin_modal" title="Add bulletin">
+            <i class="fas fa-plus-circle"></i>
+        </button>
+    </div>
+</div>
+
+<div class="modal fade" id="add_bulletin_modal" tabindex="-1" role="dialog" aria-labelledby="add_bulletin_modal_label">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="add_bulletin_modal_label">Add Bulletin</h4>
+      </div>
+      <div class="modal-body">
+        {{ wtf.quick_form(form) }}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+
+{% block styles %}
+{{ super() }}
+
+{% endblock %}
+{% block scripts %}
+{{ super() }}
+<script>
+
+</script>
+{% endblock %}

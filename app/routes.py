@@ -1,3 +1,5 @@
+import random
+
 from app import app
 from flask import render_template, url_for, flash, redirect, request
 from app.forms import *
@@ -42,18 +44,73 @@ def register():
 
     reg_form = RegistrationForm()
     if reg_form.validate_on_submit():
+        two_factor_auth_code = random.randint(10 ** (6 - 1), (10 ** 6) - 1)  # 6 is number of digit to be generated
         token = jwt.encode({
             'data': {'name': reg_form.name.data,
                      'email': reg_form.email.data.lower().replace(' ', ''),
-                     'password': reg_form.password.data
+                     'password': reg_form.password.data,
+                     'two_factor_auth_code': two_factor_auth_code
                      },
              'exp': ttime() + 600}, #expires in 600 secs
             app.config['SECRET_KEY'], algorithm='HS256')#.decode('utf-8')
-        print(token)
-        send_registration_confirmation_email(reg_form.email.data.lower(), reg_form.name.data, token)
+        # two_fa = TwoFactorAuthentication(two_fa_code=two_factor_auth_code, token=token, date_created=datetime.now())
+        # db.session.add(two_fa)
+        # db.session.commit()
+        print(datetime.now(), token, two_factor_auth_code)
+        send_registration_confirmation_email(reg_form.email.data.lower(), reg_form.name.data, token, two_factor_auth_code)
         flash('Please check your email to confirm your account.', 'alert-info')
-        redirect(url_for('register'))
+        return redirect(url_for('register_user_2fa', token=token))
     return render_template('register.html', reg_form=reg_form)
+
+
+@app.route('/register_user/two_factor_authentication/<token>', methods=['GET', 'POST'])
+def register_user_2fa(token):
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    form = TwoFactorAuthForm()
+    if form.validate_on_submit():
+        # two_fa = TwoFactorAuthentication.query.filter_by(two_fa_code=form.code.data, date_used=None).first()
+        # if not two_fa:
+        #     flash('Invalid code!', 'alert-warning')
+        #     return redirect(url_for('update_user_password_2fa'))
+
+        try:
+            user_token = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])['data']
+        except:
+            flash('Invalid token!', 'alert-warning')
+            return redirect(url_for('login'))
+        if not user_token['two_factor_auth_code'] == form.code.data:
+            flash('Invalid token!', 'alert-warning')
+            return redirect(url_for('login'))
+        user_q = User.query.filter(func.lower(User.email) == user_token['email'].lower()).all()
+        if user_q:
+            flash('The email is already in use!', 'alert-warning')
+            return redirect(url_for('login'))
+        user = User(name=user_token['name'],
+                    email=user_token['email'])
+        user.set_password(user_token['password'])
+        db.session.add(user)
+        db.session.commit()
+
+        user_pw = UserPassword(user_id=user.id, password_hash=user.password_hash, date_registered=datetime.now())
+        db.session.add(user_pw)
+        db.session.commit()
+        log = ActivityLog(
+            log=f'{user.id}-{user.name} email-{user.email} registered')
+        db.session.add(log)
+        db.session.commit()
+        user.logs.append(log)
+        db.session.commit()
+        body = f'{user.name} registered on the Training and Development app with email {user.email} .'
+        email_user(1, 'User registration', body)
+        push_json = {"title": "User registration",
+                     "body": f'{user.name} registered on the Training and Development app with email {user.email}.'}
+        # head_nurses = User.query.filter_by(designation_id=2).all()
+        # trigger_push_notifications_for_user_designation(push_json, head_nurses)
+        trigger_push_notifications_for_bb_admins(push_json)
+        flash("Thank you for registering. You may now be able to log into your account.", 'alert-info')
+        return redirect(url_for('login'))
+    return render_template('two_factor_auth.html', form=form)
 
 
 @app.route('/register_user/<token>', methods=['GET', 'POST'])
@@ -80,14 +137,19 @@ def register_user(token):
     user_pw = UserPassword(user_id=user.id, password_hash=user.password_hash, date_registered=datetime.now())
     db.session.add(user_pw)
     db.session.commit()
-
-    body = f'{user.name} registered on the biogenix app with email {user.email} .'
+    log = ActivityLog(
+        log=f'{user.id}-{user.name} email-{user.email} registered')
+    db.session.add(log)
+    db.session.commit()
+    user.logs.append(log)
+    db.session.commit()
+    body = f'{user.name} registered on the Training and Development app with email {user.email} .'
     email_user(1, 'User registration', body)
     push_json = {"title": "User registration",
-                 "body": f'{user.name} registered on the biogenix app with email {user.email}.'}
-    head_nurses = User.query.filter_by(designation_id=2).all()
-    trigger_push_notifications_for_user_designation(push_json, head_nurses)
-
+                 "body": f'{user.name} registered on the Training and Development app with email {user.email}.'}
+    # head_nurses = User.query.filter_by(designation_id=2).all()
+    # trigger_push_notifications_for_user_designation(push_json, head_nurses)
+    trigger_push_notifications_for_bb_admins(push_json)
     flash("Thank you for registering. You may now be able to log into your account.", 'alert-info')
     return redirect(url_for('login'))
 
@@ -99,20 +161,59 @@ def update_password():
 
     form = UpdatePasswordForm(current_user)
     if form.validate_on_submit():
+        two_factor_auth_code = random.randint(10 ** (6 - 1), (10 ** 6) - 1)  # 6 is number of digit to be generated
         token = jwt.encode({
             'data': {'user_id': current_user.id,
-                     'name': form.name.data.title(),
-                     'email': form.email.data.lower().replace(' ', ''),
-                     'password': form.password.data
+                     'name': current_user.name.title(),
+                     'email': current_user.email,
+                     'password': form.password.data,
+                     'two_factor_auth_code': two_factor_auth_code
                      },
             'exp': ttime() + 600},  # expires in 600 secs
             app.config['SECRET_KEY'], algorithm='HS256')#.decode('utf-8')
-        print(token)
-        send_password_update_confirmation_email(form.email.data.lower(), form.name.data, token)
-        flash('Please open your email and click on the confirmation link to confirm your account. ', 'alert-info')
-        redirect(url_for('index'))
+        # two_fa = TwoFactorAuthentication(two_fa_code=two_factor_auth_code, token=token, date_created=datetime.now())
+        # db.session.add(two_fa)
+        # db.session.commit()
+        print(datetime.now(), token, two_factor_auth_code)
+        send_password_update_confirmation_email(current_user.email, current_user.name.title(), token, two_factor_auth_code)
+        flash('Please check your email for instructions on how to confirm your account.', 'alert-info')
+        return redirect(url_for('update_user_password_2fa', token=token))
 
     return render_template('update_password.html', title='Update Password', form=form)
+
+
+@app.route('/update_user_password/two_factor_authentication/<token>', methods=['GET', 'POST'])
+def update_user_password_2fa(token):
+    if not current_user.is_authenticated:  # don't use @login_required decorator
+        return redirect(url_for('login')) #password expiry was added to @Login_required so it will cause an infinite loop
+    form = TwoFactorAuthForm()
+    if form.validate_on_submit():
+        # two_fa = TwoFactorAuthentication.query.filter_by(two_fa_code=form.code.data, date_used=None).first()
+        # if not two_fa:
+        #     flash('Invalid code!', 'alert-warning')
+        #     return redirect(url_for('update_user_password_2fa'))
+        try:
+            user_token = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])['data']
+            # two_fa.date_used = datetime.now()
+        except:
+            flash('Invalid token!', 'alert-warning')
+            return redirect(url_for('login'))
+
+        if current_user.id != int(user_token['user_id']):
+            flash('Invalid token!', 'alert-warning')
+            return redirect(url_for('login'))
+
+        # user = User.query.get(user_token['user_id'])
+        current_user.set_password(user_token['password'])
+        db.session.commit()
+
+        user_pw = UserPassword(user_id=current_user.id, password_hash=current_user.password_hash, date_registered=datetime.now())
+        db.session.add(user_pw)
+        db.session.commit()
+
+        flash("Password updated.", 'alert-info')
+        return redirect(url_for('index'))
+    return render_template('two_factor_auth.html', form=form)
 
 
 @app.route('/update_user_password/<token>', methods=['GET', 'POST'])
@@ -125,11 +226,15 @@ def update_user_password(token):
         flash('Invalid token!', 'alert-warning')
         return redirect(url_for('login'))
 
-    user = User.query.get(user_token['user_id'])
-    user.set_password(user_token['password'])
+    if current_user.id != int(user_token['user_id']):
+        flash('Invalid token!', 'alert-warning')
+        return redirect(url_for('login'))
+
+    # user = User.query.get(user_token['user_id'])
+    current_user.set_password(user_token['password'])
     db.session.commit()
 
-    user_pw = UserPassword(user_id=user.id, password_hash=user.password_hash, date_registered=datetime.now())
+    user_pw = UserPassword(user_id=current_user.id, password_hash=current_user.password_hash, date_registered=datetime.now())
     db.session.add(user_pw)
     db.session.commit()
 
@@ -158,21 +263,21 @@ def login():
                 db.session.commit()
                 flash('Invalid email or password', 'alert-warning')
                 return redirect(url_for('login'))
-            lg_attempt.success = True
-            # db.session.commit()
-            login_user(user, remember=login_form.remember_me.data)
-            # user_shift = UserShift(user_id=user.id, shift_id=login_form.shift.data, date=datetime.now())
-            # db.session.add(user_shift)
-            db.session.commit()
-            # print(current_user.is_password_expired())
-            # if current_user.is_password_expired():
-            #     print('expired')
-            #     redirect(url_for('update_password'))
-            # flash(user.name + ' logged in for ' + user_shift.shift.name + ' shift', 'alert-info')
-            next_page = request.args.get('next')
-            if not next_page or url_parse(next_page).netloc != '':
-                next_page = url_for('index')
-            return redirect(next_page)
+            else:
+                if not user.is_active():
+                    lg_attempt.success = False
+                    lg_attempt.error = 'Account not yet activated'
+                    flash('Account not activated. Please inform one of the admins to activate your account.', 'alert-warning')
+                    return redirect(url_for('login'))
+                else:
+                    lg_attempt.success = True
+                    # db.session.commit()
+                    login_user(user, remember=login_form.remember_me.data)
+                    db.session.commit()
+                    next_page = request.args.get('next')
+                    if not next_page or url_parse(next_page).netloc != '':
+                        next_page = url_for('index')
+                    return redirect(next_page)
         else:
             lg_attempt.success = False
             lg_attempt.error = 'Invalid form'
@@ -238,17 +343,7 @@ def logout():
 @app.route('/index', methods=['GET', 'POST'])
 @login_required
 def index():
-    return redirect(url_for('continuing_medical_education'))
-    # form = AddNursingCourseForm()
-    # nursing_courses = NursingCourse.query.all()
-    # if form.validate_on_submit():
-    #     info = NursingCourse(title=form.title.data,
-    #                          body=form.body.data,
-    #                          submitted_by_id=current_user.id)
-    #     db.session.add(info)
-    #     db.session.commit()
-    #     return redirect(url_for('index'))
-    # return render_template('index.html', form=form, nursing_courses=nursing_courses)
+    return redirect(url_for('bulletin_board'))
 
 
 @app.route('/edit_profile', methods=['GET', 'POST'])
@@ -258,6 +353,12 @@ def edit_profile():
     if form.validate_on_submit():
         current_user.name = form.name.data
         current_user.email = form.email.data.lower().replace(' ', '')
+        db.session.commit()
+        log = ActivityLog(
+            log=f'{current_user.id}-{current_user.name} {current_user.email} edited profile.')
+        db.session.add(log)
+        db.session.commit()
+        current_user.logs.append(log)
         db.session.commit()
     elif request.method == 'GET':
         form.name.data = current_user.name

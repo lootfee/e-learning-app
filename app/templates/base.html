@@ -41,18 +41,19 @@
             {% if current_user.designation_id %}
             {% if current_user.id == 1 or current_user.designation_id <= 3 or current_user.is_cme_course_creator() %}
             <ul class="nav navbar-nav">
-                {% if current_user.designation_id == 1 or current_user.is_cme_course_creator() %}
+                {% if current_user.is_cme_course_creator() %}
                 <li>
                     <a href="{{ url_for('cme_admin') }}">
                         <i class="fas fa-user-shield"></i>
-                        Admin
+                        Courses Admin
                     </a>
                 </li>
-                {% elif current_user.designation_id > 1 and current_user.designation_id <= 3 %}
+                {% endif %}
+                {% if current_user.is_bb_admin() %}
                 <li>
-                    <a href="">
+                    <a href="{{ url_for('bulletin_admin') }}">
                         <i class="fas fa-user-shield"></i>
-                        Admin
+                        Bulletin Admin
                     </a>
                 </li>
                 {% endif %}
@@ -144,6 +145,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 {{ super() }}
 <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+<link rel="stylesheet" href="//cdn.datatables.net/1.10.25/css/jquery.dataTables.min.css">
 <style>
 body {
     padding-top: 70px;
@@ -264,7 +266,7 @@ body {
 
     .create_course_cont {
         position: fixed;
-        bottom: 10%;
+        bottom: 2%;
         right: 0;
     }
 
@@ -320,11 +322,11 @@ body {
         font-size: 10px;
     }
 
-    .create_course_cont {
+    {#.create_course_cont {
         position: fixed;
-        bottom: 15vh;
+        bottom: 5vh;
         right: 0;
-    }
+    }#}
 }
 
 @media (max-width: 550px) {
@@ -339,6 +341,10 @@ body {
 
     #side_nav a {
         font-size: 16px;
+    }
+    .col-sm-12, col-xs-12 {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
     }
 
 }
@@ -360,8 +366,8 @@ body {
     {% endif %}
 </script>
 {{ super() }}
-
 <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+<script src="//cdn.datatables.net/1.10.25/js/jquery.dataTables.min.js"></script>
 <script>
 {#$.widget.bridge('uibutton', $.ui.button);#}
 {#$.widget.bridge('uitooltip', $.ui.tooltip);#}

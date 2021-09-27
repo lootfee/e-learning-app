@@ -1,10 +1,10 @@
 {% extends "cme/cme_base.html" %}
 
 {% block cme_content %}
-<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 no-padding-mobile">
     <h3 class="text-center">Biogenix Learning Hub Courses</h3>
     {% for course in open_courses %}
-    <div class="col-lg-4 col-md-4 col-sm-12 col-xs-12">
+    <div class="col-lg-4 col-md-4 col-sm-12 col-xs-12 no-padding-mobile">
         <div class="panel panel-info ">
             <div class="panel-heading">
                 <img class="course_coverpage" src="{{ url_for('static', filename='cme/' + course.cover_page)  }}">
@@ -23,10 +23,10 @@
 </div>
 
 {% if ended_courses %}
-<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 no-padding-mobile">
     <h3 class="text-center">Ended Courses</h3>
     {% for course in ended_courses %}
-    <div class="col-lg-4 col-md-4 col-sm-12 col-xs-12">
+    <div class="col-lg-4 col-md-4 col-sm-12 col-xs-12 no-padding-mobile">
         <div class="panel panel-info ">
             <div class="panel-heading">
                 <img class="course_coverpage" src="{{ url_for('static', filename='cme/' + course.cover_page)  }}">
@@ -43,7 +43,7 @@
 </div>
 {% endif %}
 
-{% if current_user.designation_id == 1 %}
+{% if current_user.is_cme_admin() %}
 <div class="row">
     <div class="col-lg-2 col-lg-offset-10 col-md-2 col-md-offset-10 col-sm-3 col-sm-offset-9 col-xs-3 col-xs-offset-9 create_course_cont">
         <a class="btn btn-primary btn-lg" href="{{ url_for('cme_add_course') }}" title="Add course">
@@ -72,6 +72,9 @@
     .course_coverpage {
         height: 160px;
     }
+    {#.no-padding-mobile {
+        padding: 0 !important;
+    }#}
 }
 </style>
 {% endblock %}

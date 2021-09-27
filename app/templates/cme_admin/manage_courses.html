@@ -5,7 +5,7 @@
     <h3 class="text-center">Manage Courses</h3>
 </div>
 {% for course in courses %}
-{% if current_user.designation_id == 1 or course.is_creator(current_user) %}
+{% if course.is_creator(current_user) %}
 <div class="col-lg-4 col-md-4 col-sm-12 col-xs-12">
     <div class="panel {% if course.published == True %}panel-info {% elif course.published == False %}panel-warning{% endif %}">
         <div class="panel-heading">
@@ -37,7 +37,7 @@
                     <i class="fas fa-edit"></i>
                 </button>
                 {% endif %}
-                {% if current_user.designation_id == 1 and course.published == False %}
+                {% if current_user.is_cme_admin() and course.published == False %}
                     <button class="btn btn-danger" data-toggle="popover" data-html="true"
                             data-container="body" data-placement="top"
                             data-content="<p>Are you sure you want to delete {{ course.title }} course?</p>
@@ -63,7 +63,7 @@
 {% endif %}
 {% endfor %}
 
-
+{% if current_user.is_cme_admin() %}
 <div class="row">
     <div class="col-lg-2 col-lg-offset-10 col-md-2 col-md-offset-10 col-sm-3 col-sm-offset-9 col-xs-3 col-xs-offset-9 create_course_cont">
         <a class="btn btn-primary btn-lg" href="{{ url_for('cme_add_course') }}" {#data-toggle="modal" data-target="#add_course_modal"#} title="Add course">
@@ -71,6 +71,7 @@
         </a>
     </div>
 </div>
+{% endif %}
 
 <div class="modal fade" id="edit_course_modal" tabindex="-1" role="dialog" aria-labelledby="edit_course_modal_Label">
     <div class="modal-dialog" role="document">
