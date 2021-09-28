@@ -12,7 +12,7 @@
     <h3>{{ bulletin.title }}</h3>
 </div>
 <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
-    <div style="white-space: pre-line">{{ bulletin.content }}</div>
+    <div style="white-space: pre-line">{{- bulletin.content -}}</div>
 </div>
 
 {% for attachment in bulletin.attachments %}

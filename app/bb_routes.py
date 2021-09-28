@@ -76,7 +76,7 @@ def bulletin_board():
             bulletin.submitted_date = datetime.now()
             db.session.commit()
             push_json_admin = {"title": "Bulletin Submitted",
-                               "body": f'{draft_bulletin.title} bulletin was submitted by {draft_bulletin.submitted_by.name}.'}
+                               "body": f'{bulletin.title} bulletin was submitted by {bulletin.submitted_by.name}.'}
             trigger_push_notifications_for_bb_admins(push_json_admin)
             flash('Bulletin submitted and awaiting for approval', 'alert-info')
             return redirect(url_for('bulletin_board'))
@@ -165,7 +165,7 @@ def my_bulletins():
             bulletin.submitted_date = datetime.now()
             db.session.commit()
             push_json_admin = {"title": "Bulletin Submitted",
-                               "body": f'{draft_bulletin.title} bulletin was submitted by {draft_bulletin.submitted_by.name}.'}
+                               "body": f'{bulletin.title} bulletin was submitted by {bulletin.submitted_by.name}.'}
             trigger_push_notifications_for_bb_admins(push_json_admin)
             return redirect(url_for('bulletin_board'))
     return render_template('bulletin_board/draft_bulletins.html', my_bulletins=my_bulletins, form=form)

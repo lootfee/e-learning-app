@@ -139,5 +139,5 @@ cython_debug/
 
 
 migrations/
-static/cme/*
-static/bulletin/*
+static/cme/
+static/bulletin/
