@@ -107,7 +107,7 @@ def trigger_push_notifications_for_admins(json):
     admin_roles = Role.query.filter(Role.id <= 2).all()
     for admin in admin_roles:
         for user in admin.users:
-            users.append(user.email)
+            users.append(user)
     title = json_data.get('title')
     body = json_data.get('body')
     data = json_data.get('data')
@@ -121,7 +121,7 @@ def trigger_push_notifications_for_cme_admins(json):
     admin_roles = Role.query.filter(Role.id == 1).all()
     for admin in admin_roles:
         for user in admin.users:
-            users.append(user.email)
+            users.append(user)
     title = json_data.get('title')
     body = json_data.get('body')
     data = json_data.get('data')
@@ -135,7 +135,7 @@ def trigger_push_notifications_for_bb_admins(json):
     admin_roles = Role.query.filter(Role.id == 2).all()
     for admin in admin_roles:
         for user in admin.users:
-            users.append(user.email)
+            users.append(user)
     title = json_data.get('title')
     body = json_data.get('body')
     data = json_data.get('data')
