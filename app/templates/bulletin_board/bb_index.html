@@ -16,11 +16,15 @@
             </div>
             <div class="panel-body" style="white-space: pre-line;">
                 {{- bulletin.content -}}
-                {% if (bulletin.attachments|list)[0].filetype in ['jpg', 'jpeg', 'png'] %}
+                {{ (bulletin.attachments|list) }}
+                <br>
+                {{ bulletin.attachments }}
+                {#{% if (bulletin.attachments|list)[0].filetype in ['jpg', 'jpeg', 'png'] %}
+
                 <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 text-center">
                     <img src="{{ url_for('static', filename=(bulletin.attachments|list)[0].filepath) }}" class="bulletin_attachment_cover" alt="Bulletin Attachment">
                 </div>
-                {% endif %}
+                {% endif %}#}
             </div>
 
             <div class="panel-footer">
