@@ -16,17 +16,23 @@
             </div>
             <div class="panel-body" style="white-space: pre-line;">
                 {{- bulletin.content -}}
+                {% if bulletin.attachments[0].filetype in ['jpg', 'jpeg', 'png'] %}
+                <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 text-center">
+                    <img src="{{ url_for('static', filename=bulletin.attachments[0].filepath) }}" class="bulletin_attachment_cover" alt="Bulletin Attachment">
+                </div>
+                {% endif %}
             </div>
+
             <div class="panel-footer">
                 <div class="row">
                     <a href="{{ url_for('bulletin', token=bulletin.get_id_token()) }}">
-                    <div class="col-lg-8 col-md-8 col-sm-12 col-xs-12" style="margin-left: 10px; margin-right: 10px;">
-                        Posted by: {{ bulletin.submitted_by.name }}, {{ bulletin.approve_date.strftime('%b %d, %Y') }}
-                    </div>
-                    <div class="col-lg-4 col-md-4 col-sm-12 col-xs-12" style="margin-left: 10px; margin-right: 10px;">
-                        <span><i class="fas fa-eye"></i> {{ bulletin.view_count() }}</span>
-                        <span><i class="fas fa-comments"></i> {{ bulletin.comment_count() }}</span>
-                    </div>
+                        <div class="col-lg-8 col-md-8 col-sm-12 col-xs-12" style="margin-left: 10px; margin-right: 10px;">
+                            Posted by: {{ bulletin.submitted_by.name }}, {{ bulletin.approve_date.strftime('%b %d, %Y') }}
+                        </div>
+                        <div class="col-lg-4 col-md-4 col-sm-12 col-xs-12" style="margin-left: 10px; margin-right: 10px;">
+                            <span><i class="fas fa-eye"></i> {{ bulletin.view_count() }}</span>
+                            <span><i class="fas fa-comments"></i> {{ bulletin.comment_count() }}</span>
+                        </div>
                     </a>
                 </div>
             </div>
