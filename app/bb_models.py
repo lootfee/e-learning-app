@@ -157,9 +157,10 @@ class Bulletin(db.Model):
         return len(self.comments)
 
     def coverpage(self):
-        if self.attachments[0].filetype in ['jpg', 'jpeg', 'png', 'gif']:
-            coverpage = self.attachments[0].filepath
-            return coverpage
+        if self.attachments:
+            if self.attachments[0].filetype in ['jpg', 'jpeg', 'png', 'gif']:
+                coverpage = self.attachments[0].filepath
+                return coverpage
 
 
 bulletin_attachment_logs = db.Table('bulletin_attachment_logs',
