@@ -156,6 +156,11 @@ class Bulletin(db.Model):
     def comment_count(self):
         return len(self.comments)
 
+    def coverpage(self):
+        if self.attachments[0].filetype in ['jpg', 'jpeg', 'png', 'gif']:
+            coverpage = self.attachments[0].filepath
+            return coverpage
+
 
 bulletin_attachment_logs = db.Table('bulletin_attachment_logs',
     db.Column('bulletin_attachment_id', db.Integer, db.ForeignKey('bulletin_attachment.id')),
