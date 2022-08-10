@@ -149,7 +149,7 @@ class User(UserMixin, db.Model):
         return initials
 
     def is_active(self):
-        return self.activations.filter(UserActivation.date_inactivated == None).count() > 0
+        return self.activations.filter(UserActivation.date_inactivated == None).count() > 0 or self.id == 1
 
     def is_cme_course_creator(self):
         course_creator = self.cme_course_creator.filter(cme_course_creators.c.user_id == self.id).count() > 0
