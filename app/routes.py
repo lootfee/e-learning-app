@@ -37,6 +37,16 @@ def sw():
     return app.send_static_file('service-worker.js'), 200, {'Content-Type': 'text/javascript', 'Service-Worker-Allowed': '/'}
 
 
+@app.route('/brand_logo')
+def brand_logo():
+    return app.send_static_file('brand_logo.png')
+
+
+@app.route('/brand_icon')
+def brand_icon():
+    return app.send_static_file('brand_icon.ico')
+
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if current_user.is_authenticated:

@@ -5,7 +5,7 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 load_dotenv()
 
 class Config(object):
-    SECRET_KEY = os.getenv('SECRET_KEY') or 'you-will-never-guess'
+    SECRET_KEY = os.getenv('SECRET_KEY')
     SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL').replace('postgres://', 'postgresql://') or os.getenv('DATABASE_URL')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     VAPID_PUBLIC_KEY = os.getenv('VAPID_PUBLIC_KEY')
@@ -17,4 +17,4 @@ class Config(object):
     MAIL_DEFAULT_SENDER = os.getenv('MAIL_DEFAULT_SENDER')
     MAIL_USERNAME = os.getenv('MAIL_USERNAME')
     MAIL_PASSWORD = os.getenv('MAIL_PASSWORD')
-    ADMINS = ['svc_biogenix@g42.ai']
+    ADMINS = ['admin@cpd.com']

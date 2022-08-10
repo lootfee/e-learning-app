@@ -321,9 +321,10 @@ def cme_add_course_content_slides(token):
                 db.session.commit()
                 flash('Slide has been added', 'alert-info')
             return redirect(url_for('cme_add_course_content_slides', token=content.get_id_token()))
+
     if edit_form.edit_submit.data:
         if edit_form.validate_on_submit():
-            edit_slide = CmeContentSlides.query.get(edit_form.slide_id.data)
+            edit_slide = CmeContentSlides.verify_id_token(edit_form.slide_id.data)
 
             if edit_form.edit_image_file.data:
                 os.remove('app/static/cme/' + edit_slide.image_file)

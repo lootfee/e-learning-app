@@ -21,8 +21,8 @@
         <span class="icon-bar"></span>
       </button>
       <a class="navbar-brand" href="{{url_for('index')}}" style="padding:5px;">
-        <span><img alt="Brand" src="/static/transparent_logo.png" style="width:50px;"></span>
-        <span>BIOGENIX</span>
+        <span><img alt="Brand" src="{{ url_for('brand_logo') }}" style="width:40px;border-radius: 6px;"></span>
+        <span>CPD</span>
       </a>
     </div>
 
@@ -127,17 +127,17 @@
 
 {% block styles %}
 <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.13.1/css/all.css" integrity="sha384-xxzQGERXS00kBmZW/6qxqJPyxW3UR0BPsL4c8ILaIWXva5kFi7TxkIIaMiKtqV1Q" crossorigin="anonymous">
-<link rel="shortcut icon" href="{{ url_for('static', filename='transparent_logo.ico') }}">
-<link rel="icon" href="{{ url_for('static', filename='transparent_logo.ico') }}">
+<link rel="shortcut icon" href="{{ url_for('brand_icon') }}">
+<link rel="icon" href="{{ url_for('brand_icon') }}">
 <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
-<link rel="apple-touch-icon" sizes="180x180" href="static/transparent_logo-256.png">
-<link rel="apple-touch-startup-image" href="{{ url_for('static', filename='transparent_logo-256.png') }}" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
-<link rel="apple-touch-startup-image" href="{{ url_for('static', filename='transparent_logo-256.png') }}" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
-<link rel="apple-touch-startup-image" href="{{ url_for('static', filename='transparent_logo-256.png') }}" media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
-<link rel="apple-touch-startup-image" href="{{ url_for('static', filename='transparent_logo-256.png') }}" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
-<link rel="apple-touch-startup-image" href="{{ url_for('static', filename='transparent_logo-256.png') }}" media="(min-device-width: 768px) and (max-device-width: 1024px) and (-webkit-min-device-pixel-ratio: 2) and (orientation: portrait)">
-<link rel="apple-touch-startup-image" href="{{ url_for('static', filename='transparent_logo-256.png') }}" media="(min-device-width: 834px) and (max-device-width: 834px) and (-webkit-min-device-pixel-ratio: 2) and (orientation: portrait)">
-<link rel="apple-touch-startup-image" href="{{ url_for('static', filename='transparent_logo-256.png') }}" media="(min-device-width: 1024px) and (max-device-width: 1024px) and (-webkit-min-device-pixel-ratio: 2) and (orientation: portrait)">
+<link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('brand_logo') }}) }}">
+<link rel="apple-touch-startup-image" href="{{ url_for('brand_logo') }}" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
+<link rel="apple-touch-startup-image" href="{{ url_for('brand_logo') }}" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
+<link rel="apple-touch-startup-image" href="{{ url_for('brand_logo') }}" media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+<link rel="apple-touch-startup-image" href="{{ url_for('brand_logo') }}" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+<link rel="apple-touch-startup-image" href="{{ url_for('brand_logo') }}" media="(min-device-width: 768px) and (max-device-width: 1024px) and (-webkit-min-device-pixel-ratio: 2) and (orientation: portrait)">
+<link rel="apple-touch-startup-image" href="{{ url_for('brand_logo') }}" media="(min-device-width: 834px) and (max-device-width: 834px) and (-webkit-min-device-pixel-ratio: 2) and (orientation: portrait)">
+<link rel="apple-touch-startup-image" href="{{ url_for('brand_logo') }}" media="(min-device-width: 1024px) and (max-device-width: 1024px) and (-webkit-min-device-pixel-ratio: 2) and (orientation: portrait)">
 <meta name="apple-mobile-web-app-title" content="Messenger App">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
