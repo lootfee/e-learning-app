@@ -17,4 +17,4 @@ class Config(object):
     MAIL_DEFAULT_SENDER = os.getenv('MAIL_DEFAULT_SENDER')
     MAIL_USERNAME = os.getenv('MAIL_USERNAME')
     MAIL_PASSWORD = os.getenv('MAIL_PASSWORD')
-    ADMINS = ['admin@cpd.com']
+    ADMINS = ['ADMIN_EMAIL']

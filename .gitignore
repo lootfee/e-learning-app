@@ -141,3 +141,7 @@ cython_debug/
 migrations/
 static/cme/
 static/bulletin/
+Dockerfile
+docker-compose.yml
+*.pem
+proxy_cert.cer
