@@ -37,8 +37,8 @@ if not app.debug:
             secure = ()
         mail_handler = SMTPHandler(
             mailhost=(app.config['MAIL_SERVER'], app.config['MAIL_PORT']),
-            fromaddr=app.config['ADMINS'][0],#'biogenix-notification@' + app.config['MAIL_SERVER'],
-            toaddrs='lutfi.rabago@g42.ai', subject='CME App Failure ' + username,#app.config['ADMINS']
+            fromaddr=app.config['ADMINS'][0],
+            toaddrs='admin@labapp.tech', subject='CME App Failure ' + username,
             credentials=auth, secure=secure)
         mail_handler.setLevel(logging.ERROR)
         app.logger.addHandler(mail_handler)
